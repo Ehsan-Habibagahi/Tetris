@@ -2,6 +2,7 @@
 #include <windows.h>
 #include <algorithm>
 #include <vector>
+#include <conio.h>
 using namespace std;
 // Globals
 int n, m;
@@ -13,6 +14,7 @@ const string reset = "\u001b[0m";
 //     int Y;
 // }; =
 int coord_x, coord_y;
+int guide_x;
 struct Tetromino
 {
     string **p;
@@ -25,11 +27,20 @@ Tetromino *tetromino[5];
 
 HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 CONSOLE_SCREEN_BUFFER_INFO buffer_info;
+// Prototype
+void printGuide(string **p);
 // Functions
 void gotoxy(int x, int y)
 {
     COORD position = {(short)x, (short)y};
     SetConsoleCursorPosition(hConsole, position);
+}
+void hidecursor(){
+//    HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+   CONSOLE_CURSOR_INFO info;
+   info.dwSize = 100;
+   info.bVisible = FALSE;
+   SetConsoleCursorInfo(hConsole, &info);
 }
 void initialPrint(string **p)
 {
@@ -41,7 +52,7 @@ void initialPrint(string **p)
             if (j != 0)
             {
                 GetConsoleScreenBufferInfo(hConsole, &buffer_info);
-                gotoxy(++buffer_info.dwCursorPosition.X, buffer_info.dwCursorPosition.Y);
+                gotoxy(buffer_info.dwCursorPosition.X+1, buffer_info.dwCursorPosition.Y);
             }
             if (p[i][j] == "*")
             {
@@ -54,7 +65,7 @@ void initialPrint(string **p)
             }
         }
         GetConsoleScreenBufferInfo(hConsole, &buffer_info);
-        gotoxy(0, ++buffer_info.dwCursorPosition.Y);
+        gotoxy(0, buffer_info.dwCursorPosition.Y+1);
     }
 }
 bool canShape(string **p, Tetromino tetro, int x, int y)
@@ -80,14 +91,14 @@ bool canShape(string **p, Tetromino tetro, int x, int y)
     }
     return true;
 }
-void printTetro(string shape, bool deleting = false)
+void printTetro(string shape, bool deleting = false, int x = coord_x, int y = coord_y)
 {
     for (int i = 0; i < tetromino[tetNum]->height; i++)
         for (int j = 0; j < tetromino[tetNum]->weigh; j++)
         {
             if (tetromino[tetNum]->p[i][j] != "*")
             {
-                gotoxy(2 * (coord_y + j), coord_x + i);
+                gotoxy(2 * (y + j), x + i);
                 if (deleting == false)
                     cout << tetromino[tetNum]->color;
                 cout << shape << reset;
@@ -98,15 +109,17 @@ bool spawn(string **p)
 {
     srand(static_cast<unsigned int>(time(nullptr)));
     tetNum = rand() % 5;
-    string color = "\u001b[38;5;" + to_string(rand() % 223) + "m";
+    string color = "\u001b[38;5;" + to_string((rand() %16)+120) + "m";
     tetromino[tetNum]->color = color;
     // cout << endl
-        //  << "Tetnum: " << tetNum;
+    //  << "Tetnum: " << tetNum;
     coord_x = 0;
     coord_y = (m - tetromino[tetNum]->weigh) / 2;
     // cout << "Positon of y: " << coord_y;
     if (canShape(p, *tetromino[tetNum], coord_x, coord_y))
     {
+        // if(guide_x != coord_x)
+        printGuide(p);
         printTetro("*");
         return true;
     }
@@ -137,6 +150,50 @@ bool goDown(string **p)
     // cout<<"couldn't shape";
     return false;
 }
+void goRigh(string **p)
+{
+    if (canShape(p, *tetromino[tetNum], coord_x, coord_y + 1))
+    {
+        printTetro("*", true);
+        // Remove Guide
+        printTetro("*", true, guide_x);
+        ++coord_y;
+        printGuide(p);
+        printTetro("*");
+    }
+}
+void fitDown(string **p)
+{
+        printTetro("*", true);
+        printTetro("*", false,guide_x);
+        coord_x = guide_x;
+}
+void goLeft(string **p)
+{
+    if (canShape(p, *tetromino[tetNum], coord_x, coord_y - 1))
+    {
+        printTetro("*", true);
+        // Remove Guide
+        printTetro("*", true, guide_x);
+        --coord_y;
+        printGuide(p);
+        printTetro("*");
+    }
+}
+void printGuide(string **p)
+{
+    guide_x = coord_x;
+    while (canShape(p, *tetromino[tetNum], guide_x + 1, coord_y))
+    {
+        ++guide_x;
+    }
+    // cout<<"guide:"<<guide_x;
+    printTetro("-", false, guide_x);
+}
+// void delete_guide(string **p)
+// {
+// printTetro("*",true,guide_x);
+// }
 int main()
 {
     // Defining Tetrominos (:
@@ -184,16 +241,16 @@ int main()
     tet_l.p[1][1] = "*";
     // Skew
     Tetromino tet_skew;
-    tet_skew.p = new string *[3];
+    tet_skew.p = new string *[2];
     for (int i = 0; i < 3; i++)
         tet_skew.p[i] = new string[3];
-    tet_skew.height = 3;
+    tet_skew.height = 2;
     tet_skew.weigh = 3;
-    for (int i = 0; i < 3; i++)
+    for (int i = 0; i < 2; i++)
         for (int j = 0; j < 3; j++)
             tet_skew.p[i][j] = "1";
     tet_skew.p[0][0] = "*";
-    tet_skew.p[2][2] = "*";
+    tet_skew.p[1][2] = "*";
     tetromino[0] = &tet_straight;
     tetromino[1] = &tet_square;
     tetromino[2] = &tet_t;
@@ -218,18 +275,46 @@ int main()
     }
     // p[0][m/2] = "\u001b[38;5;154m";
     system("cls");
+    hidecursor();
     initialPrint(p);
     bool wentDown = false;
     bool game_continue = true;
+    int input;
     while (true)
     {
         if (!wentDown)
             game_continue = spawn(p);
         if (!game_continue)
             break;
-        Sleep(500);
+        Sleep(250);
+        if (kbhit())
+        {
+            getinput:
+            input = getch();
+            if (input == 224)
+            {
+                input = getch();
+                //Fushing the buffer
+                // FlushConsoleInputBuffer(GetStdHandle(STD_INPUT_HANDLE));
+                // Rightt
+                if (input == 77)
+                    goRigh(p);
+                // Left
+                if (input == 75)
+                    goLeft(p);
+                    if(kbhit())
+                    //Easy mode
+                    goto getinput;
+            }
+            else{
+                if(input == 32)
+                {
+                    fitDown(p);
+                }
+
+            }
+        }
         wentDown = goDown(p);
     }
     cout << "done";
-    cin >> n;
 }
