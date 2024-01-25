@@ -4,24 +4,28 @@
 #include <random>
 #include <conio.h>
 #include "header.h"
+
 using namespace std;
 // Globals
+string **p;
 int n, m;
 int tetNum;
+int sleepTime;
+bool isGuided = true;
+int score = 0;
+int number_of_spoil = 0;
+string name;
 bool inHold = false;
 vector<int> complete_lines;
 const string reset = "\u001b[0m";
 int coord_x, coord_y;
+int spoiler_x, spoiler_y;
+int x_offset, y_offset;
 int guide_x;
-struct point
-{
-    int x, y;
-};
 struct Tetromino
 {
     string **p;
-    point pivot;
-    int weigh;
+    int width;
     int height;
     string color;
 };
@@ -34,6 +38,10 @@ CONSOLE_SCREEN_BUFFER_INFO buffer_info;
 // Prototype
 void printGuide(string **p, Tetromino tetro = currentTetro);
 void updateMap(int i, int j, string color, string shape);
+void spoilTetro(string **p);
+bool spawn(string **p);
+void addSpoiler(string **p);
+void spoilLost();
 // Functions
 void gotoxy(int x, int y)
 {
@@ -56,20 +64,16 @@ void showCursor()
 }
 void initialPrint(string **p)
 {
-    gotoxy(0, 1);
+    gotoxy(0 + x_offset, 1 + y_offset);
     for (int i = 0; i < n; i++)
     {
         for (int j = 0; j < m; j++)
         {
             GetConsoleScreenBufferInfo(hConsole, &buffer_info);
             if (j != 0)
-            {
                 gotoxy(buffer_info.dwCursorPosition.X + 1, buffer_info.dwCursorPosition.Y);
-            }
             else
-            {
                 gotoxy(buffer_info.dwCursorPosition.X + 2, buffer_info.dwCursorPosition.Y);
-            }
             if (p[i][j] == "*")
             {
                 cout << "◼";
@@ -81,14 +85,14 @@ void initialPrint(string **p)
             }
         }
         GetConsoleScreenBufferInfo(hConsole, &buffer_info);
-        gotoxy(0, buffer_info.dwCursorPosition.Y + 1);
+        gotoxy(0 + x_offset, buffer_info.dwCursorPosition.Y + 1);
     }
 }
 bool canShape(string **p, Tetromino tetro, int x, int y)
 {
     for (int i = 0; i < tetro.height; i++)
     {
-        for (int j = 0; j < tetro.weigh; j++)
+        for (int j = 0; j < tetro.width; j++)
         {
             if (tetro.p[i][j] != "*")
             {
@@ -103,26 +107,34 @@ bool canShape(string **p, Tetromino tetro, int x, int y)
 }
 void printTetro(string shape, bool deleting = false, int x = coord_x, int y = coord_y, Tetromino tetro = currentTetro)
 {
-    gotoxy(200, 100);
-    // cout << "print tetro in " << x << " "
-    //  << "y: " << y;
+    bool spoiled = false;
     for (int i = 0; i < tetro.height; i++)
-        for (int j = 0; j < tetro.weigh; j++)
+        for (int j = 0; j < tetro.width; j++)
         {
             if (tetro.p[i][j] != "*")
             {
+                if (shape == "◼" && deleting == false && x + i == spoiler_x && y + j == spoiler_y)
+                {
+                    spoiled = true;
+                }
                 if (deleting == false)
                     updateMap(x + i, y + j, tetro.color, shape);
                 else
                     updateMap(x + i, y + j, "", shape);
             }
         }
+    if (spoiled)
+    {
+        spoilTetro(p);
+        addSpoiler(p);
+        spawn(p);
+    }
 }
 void print_outside_tetro(int x, int y, Tetromino tetro)
 {
     gotoxy(x, y);
     for (int i = 0; i < tetro.height; i++)
-        for (int j = 0; j < tetro.weigh; j++)
+        for (int j = 0; j < tetro.width; j++)
             if (tetro.p[i][j] != "*")
             {
                 gotoxy(x + (j * 2), y + i);
@@ -134,12 +146,13 @@ void delete_outside_tetro(int x, int y)
     for (int i = 1; i < 11; i++)
         for (int j = 1; j < 5; j++)
         {
-            gotoxy(x + i, y + j);
+            gotoxy(x + i + x_offset, y_offset + y + j);
             cout << " ";
         }
 }
-void printB(int x, int y, int w, int h)
+void printBoarder(int x, int y, int w, int h)
 {
+    cout << "\u001b[38;5;245m";
     gotoxy(x, y);
     cout << "╔";
     for (int i = 0; i < w; i++)
@@ -158,14 +171,64 @@ void printB(int x, int y, int w, int h)
         cout << "═";
     gotoxy(x + w + 1, y + h + 1);
     cout << "╝";
+    cout << reset;
+}
+void delete_score()
+{
+    for (int i = 0; i < 5; i++)
+    {
+        gotoxy(x_offset + 8 + i, 3);
+        cout << ' ';
+    }
+}
+void print_score()
+{
+    gotoxy(x_offset + 8, 3);
+    cout << score;
 }
 void updateMap(int i, int j, string color, string shape)
 {
-    gotoxy(2 * j + 2, i + 1);
+    gotoxy(2 * j + 2 + x_offset, i + 1 + y_offset);
     if (color != "")
         cout << color << shape << reset;
     else
         cout << shape;
+}
+void randomRotation(Tetromino &tetro)
+{
+    random_device rd;
+    mt19937 gen(rd());
+    uniform_int_distribution<> distrib(0, 100);
+    int randNum = distrib(gen);
+    for (int k = 0; k < randNum % 3; k++)
+    {
+        int w = tetro.width;
+        int h = tetro.height;
+        Tetromino temp;
+        temp.color = tetro.color;
+        temp.height = w;
+        temp.width = h;
+        temp.p = new string *[w];
+        for (int i = 0; i < w; i++)
+            temp.p[i] = new string[h];
+        for (int i = 0; i < h; i++)
+            for (int j = 0; j < w; j++)
+                temp.p[j][h - i - 1] = tetro.p[i][j];
+        tetro = temp;
+    }
+}
+void addSpoiler(string **p)
+{
+    do
+    {
+        random_device rd;
+        mt19937 gen(rd());
+        uniform_int_distribution<> distrib(0, 100);
+        int randNum = distrib(gen);
+        spoiler_x = randNum % n;
+        spoiler_y = randNum % m;
+    } while (p[spoiler_x][spoiler_y] != "*");
+    updateMap(spoiler_x, spoiler_y, "", "🖕");
 }
 bool spawn(string **p)
 {
@@ -176,21 +239,22 @@ bool spawn(string **p)
         mt19937 gen(rd());
         uniform_int_distribution<> distrib(0, 100);
         int randNum = distrib(gen);
-        tetNum = randNum % 5;
+        tetNum = randNum % 7;
         string color = "\u001b[38;5;" + to_string((randNum % 16) + 120) + "m";
         pendingTetro = *tetromino[tetNum];
         pendingTetro.color = color;
-        delete_outside_tetro(2 * n + 4, 6);
-        print_outside_tetro(2 * n + 5 + (10 - pendingTetro.weigh * 2) / 2, (4 - pendingTetro.height) / 2 + 7, pendingTetro);
+        randomRotation(pendingTetro);
+        delete_outside_tetro(2 * m + 4, 8);
+        print_outside_tetro(2 * m + 5 + (10 - pendingTetro.width * 2) / 2 + x_offset, (4 - pendingTetro.height) / 2 + 9 + y_offset, pendingTetro);
     }
     else
     {
         currentTetro = holdTetro;
         inHold = false;
-        delete_outside_tetro(2 * n + 4, 0);
+        delete_outside_tetro(2 * m + 4, 1);
     }
     coord_x = 0;
-    coord_y = (m - currentTetro.weigh) / 2;
+    coord_y = (m - currentTetro.width) / 2;
     if (canShape(p, currentTetro, coord_x, coord_y))
     {
         printGuide(p);
@@ -212,7 +276,7 @@ bool goDown(string **p)
     {
         for (int i = 0; i < currentTetro.height; i++)
         {
-            for (int j = 0; j < currentTetro.weigh; j++)
+            for (int j = 0; j < currentTetro.width; j++)
             {
                 if (currentTetro.p[i][j] != "*")
                 {
@@ -231,28 +295,29 @@ void hold_tet(string **p)
         // Delete last tetro
         printTetro("◼", true, coord_x, coord_y, currentTetro);
         // Delete last guide
+
         printTetro("◼", true, guide_x, coord_y, currentTetro);
         holdTetro = currentTetro;
         currentTetro = pendingTetro;
         // Print hold
-        print_outside_tetro(2 * n + 5 + (10 - holdTetro.weigh * 2) / 2, (4 - holdTetro.height) / 2 + 1, holdTetro);
+        print_outside_tetro(2 * m + 5 + (10 - holdTetro.width * 2) / 2 + x_offset, (4 - holdTetro.height) / 2 + 2 + y_offset, holdTetro);
         // Print new tetro
         printTetro("◼");
         // print new guide
         printGuide(p);
-        // for show the next tet in another box
+        // For show the next tet in another box
         random_device rd;
         mt19937 gen(rd());
         uniform_int_distribution<> distrib(1, 100);
         int randNum = distrib(gen);
-        tetNum = randNum % 5;
+        tetNum = randNum % 7;
         string color = "\u001b[38;5;" + to_string((randNum % 16) + 120) + "m";
         pendingTetro = *tetromino[tetNum];
         pendingTetro.color = color;
         // Delete pending
-        delete_outside_tetro(2 * n + 4, 6);
+        delete_outside_tetro(2 * m + 4, 8);
         // Print new pending
-        print_outside_tetro(2 * n + 5 + (10 - pendingTetro.weigh * 2) / 2, (4 - pendingTetro.height) / 2 + 7, pendingTetro);
+        print_outside_tetro(2 * m + 5 + (10 - pendingTetro.width * 2) / 2 + x_offset, (4 - pendingTetro.height) / 2 + 9 + y_offset, pendingTetro);
     }
 }
 void goRight(string **p)
@@ -261,17 +326,36 @@ void goRight(string **p)
     {
         printTetro("◼", true);
         // Remove Guide
+
         printTetro("◼", true, guide_x);
         ++coord_y;
         printGuide(p);
         printTetro("◼");
     }
 }
+void down(string **p)
+{
+    if (canShape(p, currentTetro, coord_x + 1, coord_y))
+    {
+        printTetro("◼", true);
+        // Remove Guide
+        printTetro("◼", true, guide_x);
+        ++coord_x;
+        printGuide(p);
+        printTetro("◼");
+        ++score;
+        delete_score();
+        print_score();
+    }
+}
 void fitDown(string **p)
 {
     printTetro("◼", true);
     printTetro("◼", false, guide_x);
+    score += (guide_x - coord_x);
     coord_x = guide_x;
+    delete_score();
+    print_score();
 }
 void goLeft(string **p)
 {
@@ -279,6 +363,7 @@ void goLeft(string **p)
     {
         printTetro("◼", true);
         // Remove Guide
+
         printTetro("◼", true, guide_x);
         --coord_y;
         printGuide(p);
@@ -292,16 +377,17 @@ void printGuide(string **p, Tetromino tetro)
     {
         ++guide_x;
     }
-    printTetro("⛶", false, guide_x);
+    if (isGuided)
+        printTetro("⛶", false, guide_x);
 }
 void rotateRight(string **p)
 {
-    int w = currentTetro.weigh;
+    int w = currentTetro.width;
     int h = currentTetro.height;
     Tetromino temp;
     temp.color = currentTetro.color;
     temp.height = w;
-    temp.weigh = h;
+    temp.width = h;
     temp.p = new string *[w];
     for (int i = 0; i < w; i++)
         temp.p[i] = new string[h];
@@ -309,7 +395,6 @@ void rotateRight(string **p)
         for (int j = 0; j < w; j++)
             temp.p[j][h - i - 1] = currentTetro.p[i][j];
 
-    // int new_x = coord_x + currentTetro.height / 2;
     int new_x = coord_x;
     int new_y = coord_y;
     switch (tetNum)
@@ -334,6 +419,7 @@ void rotateRight(string **p)
     if (canShape(p, temp, new_x, new_y))
     {
         printTetro("◼", true);
+
         printTetro("◼", true, guide_x);
         // for(int i =0;i<h;i++)
         // delete[] currentTetro.p[i];
@@ -349,12 +435,12 @@ void rotateLeft(string **p)
 {
     if (tetNum == 1)
         return;
-    int w = currentTetro.weigh;
+    int w = currentTetro.width;
     int h = currentTetro.height;
     Tetromino temp;
     temp.color = currentTetro.color;
     temp.height = w;
-    temp.weigh = h;
+    temp.width = h;
     temp.p = new string *[w];
     for (int i = 0; i < w; i++)
         temp.p[i] = new string[h];
@@ -391,6 +477,7 @@ void rotateLeft(string **p)
     if (canShape(p, temp, new_x, new_y))
     {
         printTetro("◼", true);
+
         printTetro("◼", true, guide_x);
         // for(int i =0;i<h;i++)
         // delete[] currentTetro.p[i];
@@ -421,6 +508,40 @@ void flashLine(string **p)
         Sleep(300);
     }
 }
+void spoilTetro(string **p)
+{
+    for (int k = 1; k <= 3; k++)
+    {
+        // Whiten
+        for (int i = 0; i < currentTetro.height; i++)
+            for (int j = 0; j < currentTetro.width; j++)
+            {
+                if (currentTetro.p[i][j] != "*")
+                    updateMap(coord_x + i, coord_y + j, "", "▧");
+            }
+        Sleep(300);
+        // coloring
+        for (int i = 0; i < currentTetro.height; i++)
+            for (int j = 0; j < currentTetro.width; j++)
+            {
+                if (currentTetro.p[i][j] != "*")
+                    updateMap(coord_x + i, coord_y + j, currentTetro.color, "◼");
+            }
+        Sleep(300);
+    }
+    score -= 10;
+    delete_score();
+    print_score();
+    gotoxy(x_offset + 2 * m - 2 * number_of_spoil + 12, 3);
+    cout << "🖕";
+    ++number_of_spoil;
+    if(number_of_spoil >= 5)
+    spoilLost();
+    // Delete tetro
+    printTetro("◼", true);
+    // Delete guide
+    printTetro("◼", true, guide_x);
+}
 void checkRow(string **p)
 {
     complete_lines.clear();
@@ -438,6 +559,10 @@ void checkRow(string **p)
     // Flashing the lines
     if (complete_lines.size() != 0)
         flashLine(p);
+    // Giving the score
+    score += complete_lines.size() * m;
+    delete_score();
+    print_score();
     // Clearing the main board
     for (int i = 0; i < complete_lines.size(); i++)
     {
@@ -457,16 +582,27 @@ void checkRow(string **p)
                     p[i][j] = p[i - 1][j];
                     p[i - 1][j] = "*";
                     // Whiten
-                    updateMap(i-1,j,"","◼");
+                    updateMap(i - 1, j, "", "◼");
                     // Coloring
-                    updateMap(i,j,p[i][j],"◼");
+                    updateMap(i, j, p[i][j], "◼");
                 }
             }
         }
 }
+void spoilLost()
+{
+    PlaySound(TEXT("data/lost.wav"), NULL, SND_FILENAME | SND_ASYNC);
+    system("cls");
+    cout << "\u001b[38;5;196m";
+    cout << "███╗░░██╗░█████╗░░█████╗░██████╗░  ██████╗░██████╗░░█████╗░  ░░██╗██╗░░██╗\n████╗░██║██╔══██╗██╔══██╗██╔══██╗  ██╔══██╗██╔══██╗██╔══██╗  ░██╔╝╚██╗██╔╝\n██╔██╗██║██║░░██║██║░░██║██████╦╝  ██████╦╝██████╔╝██║░░██║  ██╔╝░░╚███╔╝░\n██║╚████║██║░░██║██║░░██║██╔══██╗  ██╔══██╗██╔══██╗██║░░██║  ╚██╗░░██╔██╗░\n██║░╚███║╚█████╔╝╚█████╔╝██████╦╝  ██████╦╝██║░░██║╚█████╔╝  ░╚██╗██╔╝╚██╗\n╚═╝░░╚══╝░╚════╝░░╚════╝░╚═════╝░  ╚═════╝░╚═╝░░╚═╝░╚════╝░  ░░╚═╝╚═╝░░╚═╝\n";
+    cout << reset;
+    getch();
+    exit(0);
+}
 int main()
 {
     hideCursor();
+main_menu_disp:
     int result = main_menu(1);
     // Exit
     if (result == 3)
@@ -481,10 +617,6 @@ int main()
             cout << "\u001b[38;5;123m";
             cout << "⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡤⠒⠒⠢⢄⡀⠀⠀⢠⡏⠉⠉⠉⠑⠒⠤⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⡞⠀⠀⠀⠀⠀⠙⢦⠀⡇⡇⠀⠀⠀⠀⠀⠀⠈⠱⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣠⠊⠉⠉⠙⠒⢤⡀⠀⣼⠀⠀⢀⣶⣤⠀⠀⠀⢣⡇⡇⠀⠀⢴⣶⣦⠀⠀⠀⢳⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n⠀⠀⠀⢀⣠⠤⢄⠀⠀⢰⡇⠀⠀⣠⣀⠀⠀⠈⢦⡿⡀⠀⠈⡟⣟⡇⠀⠀⢸⡇⡆⠀⠀⡼⢻⣠⠀⠀⠀⣸⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n⠀⢀⠖⠉⠀⠀⠀⣱⡀⡞⡇⠀⠀⣿⣿⢣⠀⠀⠈⣧⣣⠀⠀⠉⠋⠀⠀⠀⣸⡇⠇⠀⠀⠈⠉⠀⠀⠀⢀⡏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n⣠⠏⠀⠀⣴⢴⣿⣿⠗⢷⡹⡀⠀⠘⠾⠾⠀⠀⠀⣿⣿⣧⡀⠀⠀⠀⢀⣴⠇⣇⣆⣀⢀⣀⣀⣀⣀⣤⠟⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n⣿⠀⠀⢸⢻⡞⠋⠀⠀⠀⢿⣷⣄⠀⠀⠀⠀⠀⣠⡇⠙⢿⣽⣷⣶⣶⣿⠋⢰⣿⣿⣿⣿⣿⣿⠿⠛⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀\n⡿⡄⠀⠈⢻⣝⣶⣶⠀⠀⠀⣿⣿⣱⣶⣶⣶⣾⡟⠀⠀⠀⢈⡉⠉⢩⡖⠒⠈⠉⡏⡴⡏⠉⠉⠉⠉⠉⠉⠉⠉⡇⠀⠀⢀⣴⠒⠢⠤⣀\n⢣⣸⣆⡀⠀⠈⠉⠁⠀⠀⣠⣷⠈⠙⠛⠛⠛⠉⢀⣴⡊⠉⠁⠈⢢⣿⠀⠀⠀⢸⠡⠀⠁⠀⠀⠀⣠⣀⣀⣀⣀⡇⠀⢰⢁⡇⠀⠀⠀⢠\n⠀⠻⣿⣟⢦⣤⡤⣤⣴⣾⡿⢃⡠⠔⠒⠉⠛⠢⣾⢿⣿⣦⡀⠀⠀⠉⠀⠀⢀⡇⢸⠀⠀⠀⠀⠀⠿⠿⠿⣿⡟⠀⢀⠇⢸⠀⠀⠀⠀⠘\n⠀⠀⠈⠙⠛⠿⠿⠿⠛⠋⢰⡋⠀⠀⢠⣤⡄⠀⠈⡆⠙⢿⣿⣦⣀⠀⠀⠀⣜⠀⢸⠀⠀⠀⠀⠀⠀⠀⠀⢀⠃⠀⡸⠀⠇⠀⠀⠀⠀⠀\n⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡇⢣⠀⠀⠈⠛⠁⠀⢴⠥⡀⠀⠙⢿⡿⡆⠀⠀⢸⠀⢸⢰⠀⠀⠀⢀⣿⣶⣶⡾⠀⢀⠇⣸⠀⠀⠀⠀⠀⠀\n⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠹⡀⢇⠀⠀⠀⢀⡀⠀⠀⠈⢢⠀⠀⢃⢱⠀⠀⠀⡇⢸⢸⠀⠀⠀⠈⠉⠉⠉⢱⠀⠼⣾⣿⣿⣷⣦⠴⠀⠀\n⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢱⠘⡄⠀⠀⢹⣿⡇⠀⠀⠈⡆⠀⢸⠈⡇⢀⣀⣵⢨⣸⣦⣤⣤⣄⣀⣀⣀⡞⠀⣠⡞⠉⠈⠉⢣⡀⠀⠀\n⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢃⠘⡄⠀⠀⠉⠀⠀⣠⣾⠁⠀⠀⣧⣿⣿⡿⠃⠸⠿⣿⣿⣿⣿⣿⣿⠟⠁⣼⣾⠀⠀⠀⠀⢠⠇⠀⠀\n⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⡄⠹⣀⣀⣤⣶⣿⡿⠃⠀⠀⠀⠈⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠉⠁⠀⠀⢻⣿⣷⣦⣤⣤⠎⠀⠀⠀\n⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠘⣤⣿⡿⠟⠛⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠉⠉⠉⠀⠀⠀⠀⠀";
             Sleep(300);
-            system("cls");
-            cout << "\u001b[38;5;124m";
-            cout << "⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⢛⣭⣭⣝⡻⢿⣿⣿⡟⢰⣶⣶⣶⣮⣭⣛⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿\n⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⢡⣿⣿⣿⣿⣿⣦⡙⣿⢸⢸⣿⣿⣿⣿⣿⣿⣷⣎⢿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿\n⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠟⣵⣶⣶⣦⣭⡛⢿⣿⠃⣿⣿⡿⠉⠛⣿⣿⣿⡜⢸⢸⣿⣿⡋⠉⠙⣿⣿⣿⡌⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿\n⣿⣿⣿⡿⠟⣛⡻⣿⣿⡏⢸⣿⣿⠟⠿⣿⣿⣷⡙⢀⢿⣿⣷⢠⠠⢸⣿⣿⡇⢸⢹⣿⣿⢃⡄⠟⣿⣿⣿⠇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿\n⣿⡿⣩⣶⣿⣿⣿⠎⢿⢡⢸⣿⣿⠀⠀⡜⣿⣿⣷⠘⠜⣿⣿⣶⣴⣿⣿⣿⠇⢸⣸⣿⣿⣷⣶⣿⣿⣿⡿⢰⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿\n⠟⣰⣿⣿⠋⡋⠀⠀⣨⡈⢆⢿⣿⣧⣁⣁⣿⣿⣿⠀⠀⠘⢿⣿⣿⣿⡿⠋⣸⠸⠹⠿⡿⠿⠿⠿⠿⠛⣠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿\n⠀⣿⣿⡇⡄⢡⣴⣿⣿⣿⡀⠈⠻⣿⣿⣿⣿⣿⠟⢸⣦⡀⠂⠈⠉⠉⠀⣴⡏⠀⠀⠀⠀⠀⠀⣀⣤⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿\n⢀⢻⣿⣷⡄⠢⠉⠉⣿⣿⣿⠀⠀⠎⠉⠉⠉⠁⢠⣿⣿⣿⡷⢶⣶⡖⢩⣭⣷⣶⢰⢋⢰⣶⣶⣶⣶⣶⣶⣶⣶⢸⣿⣿⡿⠋⣭⣝⣛⠿\n⡜⠇⠹⢿⣿⣷⣶⣾⣿⣿⠟⠈⣷⣦⣤⣤⣤⣶⡿⠋⢵⣶⣾⣷⡝⠀⣿⣿⣿⡇⣞⣿⣾⣿⣿⣿⠟⠿⠿⠿⠿⢸⣿⡏⡾⢸⣿⣿⣿⡟\n⣿⣄⠀⠠⡙⠛⢛⠛⠋⠁⢀⡼⢟⣫⣭⣶⣤⣝⠁⡀⠀⠙⢿⣿⣿⣶⣿⣿⡿⢸⡇⣿⣿⣿⣿⣿⣀⣀⣀⠀⢠⣿⡿⣸⡇⣿⣿⣿⣿⣧\n⣿⣿⣷⣦⣤⣀⣀⣀⣤⣴⡏⢴⣿⣿⡟⠛⢻⣿⣷⢹⣦⡀⠀⠙⠿⣿⣿⣿⠣⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⡿⣼⣿⢇⣿⣸⣿⣿⣿⣿⣿\n⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢸⡜⣿⣿⣷⣤⣾⣿⡋⣚⢿⣿⣦⡀⢀⢹⣿⣿⡇⣿⡇⡏⣿⣿⣿⡿⠀⠉⠉⢁⣿⡿⣸⠇⣿⣿⣿⣿⣿⣿\n⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣆⢿⡸⣿⣿⣿⡿⢿⣿⣿⣷⡝⣿⣿⡼⡎⣿⣿⣿⢸⡇⡇⣿⣿⣿⣷⣶⣶⣶⡎⣿⣃⠁⠀⠀⠈⠙⣋⣿⣿\n⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡎⣧⢻⣿⣿⡆⠀⢸⣿⣿⣷⢹⣿⡇⣷⢸⡿⠿⠊⡗⠇⠙⠛⠛⠻⠿⠿⠿⢡⣿⠟⢡⣶⣷⣶⡜⢿⣿⣿\n⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡼⣧⢻⣿⣿⣶⣿⣿⠟⠁⣾⣿⣿⠘⠀⠀⢀⣼⣇⣀⠀⠀⠀⠀⠀⠀⣠⣾⠃⠁⣿⣿⣿⣿⡟⣸⣿⣿\n⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⢻⣆⠿⠿⠛⠉⠀⢀⣼⣿⣿⣿⣷⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣾⣿⣿⡄⠀⠈⠙⠛⠛⣱⣿⣿⣿\n⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⠛⠀⢀⣠⣤⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣶⣶⣶⣿⣿⣿⣿⣿";
-            Sleep(300);
         }
         cout << reset;
         exit(0);
@@ -495,15 +627,25 @@ int main()
     }
     else if (result == 1)
     {
+        result = level_menu(1);
+        if (result == 0)
+            goto main_menu_disp;
+        else if (result == 1)
+            sleepTime = 650;
+        else if (result == 2)
+            sleepTime = 450;
+        else if (result == 3)
+        {
+            sleepTime = 100;
+            isGuided = false;
+        }
         // Defining Tetrominos (:
         // 0 Straight (attracted to members of the opposite sex)
         Tetromino tet_straight;
         tet_straight.p = new string *[1];
         tet_straight.p[0] = new string[4];
         tet_straight.height = 1;
-        tet_straight.weigh = 4;
-        tet_straight.pivot.x = 0;
-        tet_straight.pivot.y = 1;
+        tet_straight.width = 4;
         for (int i = 0; i < 4; i++)
             tet_straight.p[0][i] = "1";
         // 1 Square
@@ -512,9 +654,7 @@ int main()
         tet_square.p[0] = new string[2];
         tet_square.p[1] = new string[2];
         tet_square.height = 2;
-        tet_square.weigh = 2;
-        tet_square.pivot.x = 0;
-        tet_square.pivot.y = 0;
+        tet_square.width = 2;
         for (int i = 0; i < 2; i++)
             for (int j = 0; j < 2; j++)
                 tet_square.p[i][j] = "1";
@@ -524,7 +664,7 @@ int main()
         for (int i = 0; i < 2; i++)
             tet_t.p[i] = new string[3];
         tet_t.height = 2;
-        tet_t.weigh = 3;
+        tet_t.width = 3;
         for (int i = 0; i < 2; i++)
             for (int j = 0; j < 3; j++)
                 tet_t.p[i][j] = "1";
@@ -536,9 +676,7 @@ int main()
         for (int i = 0; i < 3; i++)
             tet_l.p[i] = new string[2];
         tet_l.height = 3;
-        tet_l.weigh = 2;
-        tet_l.pivot.x = 1;
-        tet_l.pivot.y = 0;
+        tet_l.width = 2;
         for (int i = 0; i < 3; i++)
             for (int j = 0; j < 2; j++)
                 tet_l.p[i][j] = "1";
@@ -550,30 +688,73 @@ int main()
         for (int i = 0; i < 3; i++)
             tet_skew.p[i] = new string[3];
         tet_skew.height = 2;
-        tet_skew.weigh = 3;
-        tet_skew.pivot.x = 1;
-        tet_l.pivot.y = 1;
+        tet_skew.width = 3;
         for (int i = 0; i < 2; i++)
             for (int j = 0; j < 3; j++)
                 tet_skew.p[i][j] = "1";
         tet_skew.p[0][0] = "*";
         tet_skew.p[1][2] = "*";
+        // 5 Skew(2)
+        Tetromino tet_skew_2;
+        tet_skew_2.p = new string *[2];
+        for (int i = 0; i < 3; i++)
+            tet_skew_2.p[i] = new string[3];
+        tet_skew_2.height = 2;
+        tet_skew_2.width = 3;
+        for (int i = 0; i < 2; i++)
+            for (int j = 0; j < 3; j++)
+                tet_skew_2.p[i][j] = "1";
+        tet_skew_2.p[0][2] = "*";
+        tet_skew_2.p[1][0] = "*";
+        // 6 L(2)
+        Tetromino tet_l_2;
+        tet_l_2.p = new string *[3];
+        for (int i = 0; i < 3; i++)
+            tet_l_2.p[i] = new string[2];
+        tet_l_2.height = 3;
+        tet_l_2.width = 2;
+        for (int i = 0; i < 3; i++)
+            for (int j = 0; j < 2; j++)
+                tet_l_2.p[i][j] = "1";
+        tet_l_2.p[0][0] = "*";
+        tet_l_2.p[1][0] = "*";
         tetromino[0] = &tet_straight;
         tetromino[1] = &tet_square;
         tetromino[2] = &tet_t;
         tetromino[3] = &tet_l;
         tetromino[4] = &tet_skew;
+        tetromino[5] = &tet_skew_2;
+        tetromino[6] = &tet_l_2;
         system("cls");
         showCursor();
-        cout << "Gɪᴠᴇ ᴍᴇ ᴅɪᴍᴇɴᴛɪᴏɴs: ";
+        GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+        int columns = buffer_info.srWindow.Right - buffer_info.srWindow.Left + 1;
+        int rows = buffer_info.srWindow.Bottom - buffer_info.srWindow.Top + 1;
+        // Ask name
+        gotoxy(columns / 2 - 5, 2);
+        cout << "\u001b[38;5;196m";
+        cout << "Wʜᴀᴛ's ʏᴏᴜʀ ɴᴀᴍᴇ ᴍᴀᴛᴇ?" << reset;
+        gotoxy(columns / 2 + 2, 3);
+        cin >> name;
+        system("cls");
+        gotoxy(columns / 2 - 10, 2);
+        cout << "\u001b[38;5;196m";
+        cout << "Gɪᴠᴇ ᴍᴇ ᴅɪᴍᴇɴᴛɪᴏɴs: " << reset;
+        gotoxy(columns / 2 - 3, 3);
         cin >> n >> m;
         while (n < 5 || m < 5)
         {
-            cout << "Gɪᴠᴇ ᴍᴇ ᴅɪᴍᴇɴᴛɪᴏɴs: ";
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            int columns = buffer_info.srWindow.Right - buffer_info.srWindow.Left + 1;
+            int rows = buffer_info.srWindow.Bottom - buffer_info.srWindow.Top + 1;
+            gotoxy(columns / 2 - 10, 2);
+            cout << "\u001b[38;5;196m";
+            cout << "Gɪᴠᴇ ᴍᴇ ᴅɪᴍᴇɴᴛɪᴏɴs: " << reset;
+            gotoxy(columns / 2 - 3, 3);
             cin >> n >> m;
         }
         hideCursor();
-        string **p = new string *[n];
+        p = new string *[n];
         for (int i = 0; i < n; i++)
         {
             p[i] = new string[m];
@@ -581,14 +762,48 @@ int main()
                 p[i][j] = "*";
         }
         system("cls");
+        GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+        columns = buffer_info.srWindow.Right - buffer_info.srWindow.Left + 1;
+        rows = buffer_info.srWindow.Bottom - buffer_info.srWindow.Top + 1;
+        x_offset = (columns - (2 * m + 14)) / 2;
+        y_offset = 5;
         initialPrint(p);
+        addSpoiler(p);
         // Printing boarders
         // Main boarder
-        printB(0, 0, 2 * n + 1, m);
+        printBoarder(x_offset, y_offset, 2 * m + 1, n);
         // Hold Boarder
-        printB(2 * n + 4, 0, 10, 4);
+        gotoxy(2 * m + 8 + x_offset, y_offset);
+        cout << "Hᴏʟᴅ";
+        printBoarder(2 * m + 4 + x_offset, y_offset + 1, 10, 4);
+        gotoxy(2 * m + 7 + x_offset, y_offset + 7);
+        cout << "Pᴇɴᴅɪɴɢ";
         // Pending Boarder
-        printB(2 * n + 4, 6, 10, 4);
+        printBoarder(2 * m + 4 + x_offset, 6 + y_offset + 2, 10, 4);
+        // Status Boarder
+        printBoarder(x_offset, 0, 2 * m + 14, 3);
+        gotoxy(x_offset + 1, 1);
+        cout << "Nᴀᴍᴇ: " << name;
+        gotoxy(x_offset + 1, 3);
+        cout << "Sᴄᴏʀᴇ: " << score;
+        if (result == 1)
+        {
+            gotoxy(x_offset + 2 * m + 10, 1);
+            cout << "\u001b[48;5;48m"
+                 << "Easy" << reset;
+        }
+        else if (result == 2)
+        {
+            gotoxy(x_offset + 2 * m + 8, 1);
+            cout << "\u001b[48;5;220m"
+                 << "Medium" << reset;
+        }
+        else
+        {
+            gotoxy(x_offset + 2 * m + 10, 1);
+            cout << "\u001b[48;5;196m"
+                 << "Hard" << reset;
+        }
         bool wentDown = false;
         bool game_continue = true;
         int input;
@@ -597,7 +812,7 @@ int main()
         mt19937 gen(rd());
         uniform_int_distribution<> distrib(1, 100);
         int randNum = distrib(gen);
-        tetNum = randNum % 5;
+        tetNum = randNum % 7;
         string color = "\u001b[38;5;" + to_string((randNum % 16) + 120) + "m";
         pendingTetro = *tetromino[tetNum];
         pendingTetro.color = color;
@@ -612,7 +827,7 @@ int main()
             }
             if (!game_continue)
                 break;
-            Sleep(500);
+            Sleep(sleepTime);
             if (kbhit())
             {
             getinput:
@@ -632,6 +847,9 @@ int main()
                     // Rotate right
                     if (input == 72)
                         rotateRight(p);
+                    // Down
+                    if (input == 80)
+                        down(p);
                     if (kbhit() && count_move < 1)
                     {
                         // Easy mode
@@ -643,10 +861,21 @@ int main()
                 }
                 else
                 {
+                    // Hold
+                    if (input == 119 && inHold == false)
+                        hold_tet(p);
+                    if (input == 97)
+                        goLeft(p);
+                    if (input == 115)
+                        down(p);
+                    if (input == 100)
+                        goRight(p);
+
                     if (input == 32)
                     {
                         fitDown(p);
                     }
+                    // Hold
                     if (input == 104 && inHold == false)
                         hold_tet(p);
                     if (input == 122)
@@ -654,9 +883,8 @@ int main()
                 }
             }
             wentDown = goDown(p);
-            // hidecursor();
         }
-
+        // GameOver
         cout << "done";
     }
 }
