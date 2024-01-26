@@ -1,9 +1,19 @@
+/*==================================================================+
+ |~-~-~-~-~-~-~-~-~-~-~-بسم الله الرحمن الرحیم-~-~-~-~-~-~-~-~-~-~-~|
+ |که پاداش هر زخمه سنگی را دستان کریم تو میوه ای چند شیرین ایثار کند|
+ |~-~-~-~-~-~-~-~-~-~-~-~-TETRIS SIMPLE GAME-~-~-~-~-~-~-~-~-~-~-~-~|
+ |~-~-~-~-~-~-~-~-~-~-AUTHOR: L4M3R BU7 WR3CK3R~-~-~-~-~-~-~-~-~-~-~|
+ |~-~-~-~-~-~-~-~-~-~-CREATED WITH LOTS OF LOVE!-~-~-~-~-~-~-~-~-~-~|
+ +==================================================================*/
 #include <iostream>
 #include <windows.h>
 #include <vector>
 #include <random>
 #include <conio.h>
 #include <cmath>
+#include <fstream>
+#include <sstream>
+#include <string>
 #include "header.h"
 
 using namespace std;
@@ -15,7 +25,7 @@ int sleepTime;
 bool isGuided = true;
 int score = 0;
 int start_time;
-int period2 =0;
+int period2 = 0;
 int level;
 int number_of_spoil = 0;
 string name;
@@ -26,6 +36,7 @@ int coord_x, coord_y;
 int spoiler_x, spoiler_y;
 int x_offset, y_offset;
 int guide_x;
+bool wentDown = false;
 struct Tetromino
 {
     string **p;
@@ -608,16 +619,48 @@ void spoilLost()
 void updateTime()
 {
     int period = static_cast<unsigned int>(time(nullptr)) - start_time + period2;
-    int min =0;
+    int min = 0;
     int sec = period;
-    while(period/60 >0)
+    while (period / 60 > 0)
     {
         ++min;
-        period/=60;
+        period /= 60;
     }
-    sec -= min*60;
+    sec -= min * 60;
     gotoxy(x_offset + 2 * m + 3, 1);
-    printf("%02d:%02d", min,sec);
+    printf("%02d:%02d", min, sec);
+}
+void saveGame()
+{
+
+    fstream fs("data/savegame.txt", ios::out | ios::trunc);
+    fs << name << " " << n << " " << m << " " << level << " " << period2 << " " << tetNum << " " << sleepTime << " " << score << " " << number_of_spoil << " " << static_cast<int>(inHold) << " " << coord_x << " " << coord_y << " " << static_cast<int>(isGuided) << " " << spoiler_x << " " << spoiler_y;
+    fs << endl;
+    for (int i = 0; i < n; i++)
+    {
+        for (int j = 0; j < m; j++)
+        {
+            fs << p[i][j];
+            if (j != m - 1)
+                fs << " ";
+        }
+        fs << endl;
+    }
+    fs.close();
+    fstream fs2("data/savetetro.txt", ios::out | ios::trunc);
+    fs2 << currentTetro.height << " " << currentTetro.width << " " << currentTetro.color;
+    fs2 << endl;
+    for (int i = 0; i < currentTetro.height; i++)
+    {
+        for (int j = 0; j < currentTetro.width; j++)
+        {
+            fs2 << currentTetro.p[i][j];
+            if (j != currentTetro.width - 1)
+                fs2 << " ";
+        }
+        fs2 << endl;
+    }
+    fs2.close();
 }
 int main()
 {
@@ -626,7 +669,7 @@ int main()
 main_menu_disp:
     int result = main_menu(1);
     // Exit
-    if (result == 3)
+    if (result == 4)
     {
         for (int i = 0; i <= 1; i++)
         {
@@ -642,7 +685,7 @@ main_menu_disp:
         cout << reset;
         exit(0);
     }
-    else if (result == 2)
+    else if (result == 3)
     {
         result = level_menu(1);
         if (result == 0)
@@ -651,20 +694,8 @@ main_menu_disp:
             leader_board(result);
         goto main_menu_disp;
     }
-    else if (result == 1)
+    else
     {
-        result = level_menu(1);
-        if (result == 0)
-            goto main_menu_disp;
-        else if (result == 1)
-            sleepTime = 650;
-        else if (result == 2)
-            sleepTime = 450;
-        else if (result == 3)
-        {
-            sleepTime = 100;
-            isGuided = false;
-        }
         // Defining Tetrominos (:
         // 0 Straight (attracted to members of the opposite sex)
         Tetromino tet_straight;
@@ -752,45 +783,147 @@ main_menu_disp:
         tetromino[5] = &tet_skew_2;
         tetromino[6] = &tet_l_2;
         system("cls");
-        showCursor();
-        GetConsoleScreenBufferInfo(hConsole, &buffer_info);
-        int columns = buffer_info.srWindow.Right - buffer_info.srWindow.Left + 1;
-        int rows = buffer_info.srWindow.Bottom - buffer_info.srWindow.Top + 1;
-        // Ask name
-        gotoxy(columns / 2 - 5, 2);
-        cout << "\u001b[38;5;196m";
-        cout << "Wʜᴀᴛ's ʏᴏᴜʀ ɴᴀᴍᴇ ᴍᴀᴛᴇ?" << reset;
-        gotoxy(columns / 2 + 2, 3);
-        cin >> name;
-        system("cls");
-        gotoxy(columns / 2 - 10, 2);
-        cout << "\u001b[38;5;196m";
-        cout << "Gɪᴠᴇ ᴍᴇ ᴅɪᴍᴇɴᴛɪᴏɴs: " << reset;
-        gotoxy(columns / 2 - 3, 3);
-        cin >> n >> m;
-        while (n < 5 || m < 5)
+        if (result == 1)
         {
+            ifstream ifs("data/savegame.txt");
+            string line;
+            vector<string> lines;
+            while (getline(ifs, line))
+            {
+                lines.push_back(line);
+            }
+            ifs.close();
+            for (int i = 0; i <= lines.size() - 1; i++)
+            {
+                vector<string> elements;
+                istringstream iss(lines[i]);
+                string elem;
+                while (getline(iss, elem, ' '))
+                {
+                    elements.push_back(elem);
+                }
+                if (i == 0)
+                {
+                    name = elements[0];
+                    n = stoi(elements[1]);
+                    m = stoi(elements[2]);
+                    level = stoi(elements[3]);
+                    period2 = stoi(elements[4]);
+                    tetNum = stoi(elements[5]);
+                    sleepTime = stoi(elements[6]);
+                    score = stoi(elements[7]);
+                    number_of_spoil = stoi(elements[8]);
+                    inHold = stoi(elements[9]);
+                    coord_x = stoi(elements[10]);
+                    coord_y = stoi(elements[11]);
+                    isGuided = stoi(elements[12]);
+                    spoiler_x = stoi(elements[13]);
+                    spoiler_y = stoi(elements[14]);
+                    p = new string *[n];
+                    for (int ii = 0; ii < n; ii++)
+                    {
+                        p[ii] = new string[m];
+                        for (int j = 0; j < m; j++)
+                            p[ii][j] = "*";
+                    }
+                }
+                else
+                {
+                    for (int j = 0; j < m; j++)
+                        p[i - 1][j] = elements[j];
+                }
+            }
+            lines.clear();
+            lines.shrink_to_fit();
+            ifstream ifs2("data/savetetro.txt");
+            while (getline(ifs2, line))
+            {
+                lines.push_back(line);
+            }
+            ifs2.close();
+            for (int i = 0; i < lines.size(); i++)
+            {
+                vector<string> elements;
+                istringstream iss(lines[i]);
+                string elem;
+                while (getline(iss, elem, ' '))
+                {
+                    elements.push_back(elem);
+                }
+                if (i == 0)
+                {
+                    currentTetro.height = stoi(elements[0]);
+                    currentTetro.width = stoi(elements[1]);
+                    currentTetro.color = elements[2];
+                    currentTetro.p = new string *[currentTetro.height];
+                    for (int k = 0; k < currentTetro.height; k++)
+                        currentTetro.p[k] = new string[currentTetro.width];
+                }
+                else
+                {
+                    for (int j = 0; j < currentTetro.width; j++)
+                        currentTetro.p[i - 1][j] = elements[j];
+                }
+            }
+            cout << "dsfa";
+            wentDown = true;
+        }
+        if (result == 2)
+        {
+            result = level_menu(1);
+            if (result == 0)
+                goto main_menu_disp;
+            else if (result == 1)
+                sleepTime = 650;
+            else if (result == 2)
+                sleepTime = 450;
+            else if (result == 3)
+            {
+                sleepTime = 100;
+                isGuided = false;
+            }
+            level = result;
+            system("cls");
+            showCursor();
             GetConsoleScreenBufferInfo(hConsole, &buffer_info);
             int columns = buffer_info.srWindow.Right - buffer_info.srWindow.Left + 1;
             int rows = buffer_info.srWindow.Bottom - buffer_info.srWindow.Top + 1;
+            // Ask name
+            gotoxy(columns / 2 - 5, 2);
+            cout << "\u001b[38;5;196m";
+            cout << "Wʜᴀᴛ's ʏᴏᴜʀ ɴᴀᴍᴇ ᴍᴀᴛᴇ?" << reset;
+            gotoxy(columns / 2 + 2, 3);
+            cin >> name;
+            system("cls");
             gotoxy(columns / 2 - 10, 2);
             cout << "\u001b[38;5;196m";
             cout << "Gɪᴠᴇ ᴍᴇ ᴅɪᴍᴇɴᴛɪᴏɴs: " << reset;
             gotoxy(columns / 2 - 3, 3);
             cin >> n >> m;
+            while (n < 5 || m < 5)
+            {
+                GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+                int columns = buffer_info.srWindow.Right - buffer_info.srWindow.Left + 1;
+                int rows = buffer_info.srWindow.Bottom - buffer_info.srWindow.Top + 1;
+                gotoxy(columns / 2 - 10, 2);
+                cout << "\u001b[38;5;196m";
+                cout << "Gɪᴠᴇ ᴍᴇ ᴅɪᴍᴇɴᴛɪᴏɴs: " << reset;
+                gotoxy(columns / 2 - 3, 3);
+                cin >> n >> m;
+            }
+            hideCursor();
+            p = new string *[n];
+            for (int i = 0; i < n; i++)
+            {
+                p[i] = new string[m];
+                for (int j = 0; j < m; j++)
+                    p[i][j] = "*";
+            }
+            system("cls");
         }
-        hideCursor();
-        p = new string *[n];
-        for (int i = 0; i < n; i++)
-        {
-            p[i] = new string[m];
-            for (int j = 0; j < m; j++)
-                p[i][j] = "*";
-        }
-        system("cls");
         GetConsoleScreenBufferInfo(hConsole, &buffer_info);
-        columns = buffer_info.srWindow.Right - buffer_info.srWindow.Left + 1;
-        rows = buffer_info.srWindow.Bottom - buffer_info.srWindow.Top + 1;
+        int columns = buffer_info.srWindow.Right - buffer_info.srWindow.Left + 1;
+        int rows = buffer_info.srWindow.Bottom - buffer_info.srWindow.Top + 1;
         x_offset = (columns - (2 * m + 14)) / 2;
         y_offset = 5;
         initialPrint(p);
@@ -814,14 +947,13 @@ main_menu_disp:
         cout << "Sᴄᴏʀᴇ: " << score;
         gotoxy(x_offset, y_offset + n + 2);
         cout << "[Esp]:Menu";
-        level = result;
-        if (result == 1)
+        if (level == 1)
         {
             gotoxy(x_offset + 2 * m + 10, 1);
             cout << "\u001b[48;5;48m"
                  << "Easy" << reset;
         }
-        else if (result == 2)
+        else if (level == 2)
         {
             gotoxy(x_offset + 2 * m + 8, 1);
             cout << "\u001b[48;5;220m"
@@ -833,9 +965,8 @@ main_menu_disp:
             cout << "\u001b[48;5;196m"
                  << "Hard" << reset;
         }
-        gotoxy(x_offset + 2 * m,1);
-        cout<<"⏱";
-        bool wentDown = false;
+        gotoxy(x_offset + 2 * m, 1);
+        cout << "⏱";
         bool game_continue = true;
         int input;
         // Generating first pending tetro
@@ -849,7 +980,6 @@ main_menu_disp:
         pendingTetro.color = color;
         int count_move = 0;
         start_time = static_cast<unsigned int>(time(nullptr));
-
         while (true)
         {
             if (!wentDown)
@@ -885,7 +1015,6 @@ main_menu_disp:
                         down(p);
                     if (kbhit() && count_move < 1)
                     {
-                        // Easy mode
                         goto getinput;
                         ++count_move;
                     }
@@ -918,6 +1047,7 @@ main_menu_disp:
                     {
                         period2 += static_cast<unsigned int>(time(nullptr)) - start_time;
                         result = ingameMenu();
+                        // Continue
                         if (result == 1)
                         {
                             initialPrint(p);
@@ -926,6 +1056,7 @@ main_menu_disp:
                             updateMap(spoiler_x, spoiler_y, "", "🖕");
                             start_time = static_cast<unsigned int>(time(nullptr));
                         }
+                        // Restart
                         if (result == 2)
                         {
                             gotoxy(0, 0);
@@ -947,9 +1078,10 @@ main_menu_disp:
                             spawn(p);
                             addSpoiler(p);
                         }
+                        // Save and quit
                         if (result == 3)
                         {
-                            update_leaderboard();
+                            saveGame();
                             goto main_menu_disp;
                         }
                     }

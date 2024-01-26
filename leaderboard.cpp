@@ -7,6 +7,34 @@
 #include "header.h"
 using namespace std;
 string address[3] = {"data/easy.txt", "data/medium.txt", "data/hard.txt"};
+struct Player
+{
+    string name;
+    int score;
+    int time;
+    int n;
+    int m;
+    int spoil;
+};
+void bubbleSort(int arr[], int n)
+{
+    int i, j;
+    bool swapped;
+    for (i = 0; i < n - 1; i++)
+    {
+        swapped = false;
+        for (j = 0; j < n - i - 1; j++)
+        {
+            if (arr[j] > arr[j + 1])
+            {
+                swap(arr[j], arr[j + 1]);
+                swapped = true;
+            }
+        }
+        if (swapped == false)
+            break;
+    }
+}
 void update_leaderboard()
 {
     fstream fs(address[level - 1], ios::out | ios::app);
@@ -36,6 +64,39 @@ void leader_board(int level)
         lines.push_back(line);
     }
     ifs.close();
+    Player player[lines.size() - 1];
+    for (int i = 0; i < lines.size() - 1; i++)
+    {
+        vector<string> elements;
+        istringstream iss(lines[i + 1]);
+        string elem;
+        while (getline(iss, elem, ' '))
+        {
+            elements.push_back(elem);
+        }
+        player[i].name = elements[0];
+        player[i].spoil = stoi(elements[2]);
+        player[i].score = stoi(elements[1]);
+        player[i].n =stoi( elements[3]);
+        player[i].m =stoi( elements[4]);
+        player[i].time = stoi(elements[5]);
+    }
+       int i, j;
+    bool swapped;
+    for (i = 0; i < line.size() - 1; i++)
+    {
+        swapped = false;
+        for (j = 0; j < lines.size() - i - 2; j++)
+        {
+            if (player[j].score < player[j + 1].score || (player[j].score == player[j+1].score && player[j].time>player[j+1].time))
+            {
+                swap(player[j], player[j + 1]);
+                swapped = true;
+            }
+        }
+        if (swapped == false)
+            break;
+    }
     system("cls");
     GetConsoleScreenBufferInfo(hConsole, &buffer_info);
     int columns = buffer_info.srWindow.Right - buffer_info.srWindow.Left + 1;
@@ -84,46 +145,53 @@ void leader_board(int level)
     cout << "Sᴘᴏɪʟ";
     gotoxy(6 * col_offset + 27, 5);
     cout << "Sᴛᴀᴛᴜs" << reset;
-    int i = 1;
+     i = 1;
     for (; i < lines.size(); i++)
     {
-        vector<string> elements;
-        istringstream iss(lines[i]);
-        string elem;
-        while (getline(iss, elem, ' '))
-        {
-            elements.push_back(elem);
-        }
+        // vector<string> elements;
+        // istringstream iss(lines[i]);
+        // string elem;
+        // while (getline(iss, elem, ' '))
+        // {
+        //     elements.push_back(elem);
+        // }
         int color = 159 + i;
         gotoxy(0, 5 + i);
         cout << "\u001b[38;5;" << color << "m"
              << "[" << i << "].";
+        //Name
         gotoxy(col_offset - 1, 5 + i);
-        cout << elements[0];
+        cout << player[i-1].name;
+        //Score
         gotoxy(2 * col_offset + 5, 5 + i);
-        cout << elements[1];
+        cout << player[i-1].score;
+        //Dimention
         gotoxy(4 * col_offset + 15, 5 + i);
-        cout << elements[3] << "*" << elements[4];
+        cout << player[i-1].n << "*" << player[i-1].m;
+        //Spoiler
         gotoxy(5 * col_offset + 22, 5 + i);
-        for (int i = 1; i <= stoi(elements[2]); i++)
+        for (int ii = 1; ii <= player[i-1].spoil; ii++)
             cout << "🖕";
+        
+        //Status
         gotoxy(6 * col_offset + 27, 5 + i);
-        if (stoi(elements[2]) >= 5)
+        if ((player[i-1].spoil) >= 5)
             cout << "F-lost";
         else
         {
             gotoxy(6 * col_offset + 24, 5 + i);
             cout << "Tetris-lost";
         }
+        //Time
         gotoxy(3 * col_offset + 9, 5 + i);
         int min = 0;
-        int sec = stoi(elements[5]);
+        int sec = (player[i-1].time);
         while (sec / 60 > 0)
         {
             ++min;
             sec /= 60;
         }
-        sec = stoi(elements[5]) - min * 60;
+        sec = (player[i-1].time) - min * 60;
         printf("%02d:%02d", min, sec);
         if (i == 10)
             break;

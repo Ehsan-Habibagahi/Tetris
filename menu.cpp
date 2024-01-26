@@ -66,7 +66,7 @@ int main_menu(int choice)
             cout << "➤ │";
             GetConsoleScreenBufferInfo(hConsole, &buffer_info);
             gotoxy(buffer_info.dwCursorPosition.X + 5, buffer_info.dwCursorPosition.Y);
-            cout << "Nᴇᴡ Gᴀᴍᴇ";
+            cout << "Cᴏɴᴛɪɴᴜᴇ";
             GetConsoleScreenBufferInfo(hConsole, &buffer_info);
             gotoxy(buffer_info.dwCursorPosition.X + 5, buffer_info.dwCursorPosition.Y);
             cout << "│";
@@ -74,6 +74,22 @@ int main_menu(int choice)
             gotoxy(x_buttons, buffer_info.dwCursorPosition.Y + 1);
             cout << "╘══════════════════╛";
             cout << reset;
+
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(x_buttons, buffer_info.dwCursorPosition.Y + 2);
+            cout << "╒══════════════════╕";
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(x_buttons, buffer_info.dwCursorPosition.Y + 1);
+            cout << "│";
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(buffer_info.dwCursorPosition.X + 5, buffer_info.dwCursorPosition.Y);
+            cout << "Nᴇᴡ Gᴀᴍᴇ";
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(buffer_info.dwCursorPosition.X + 5, buffer_info.dwCursorPosition.Y);
+            cout << "│";
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(x_buttons, buffer_info.dwCursorPosition.Y + 1);
+            cout << "╘══════════════════╛";
 
             GetConsoleScreenBufferInfo(hConsole, &buffer_info);
             gotoxy(x_buttons, buffer_info.dwCursorPosition.Y + 2);
@@ -115,7 +131,7 @@ int main_menu(int choice)
             cout << "│";
             GetConsoleScreenBufferInfo(hConsole, &buffer_info);
             gotoxy(buffer_info.dwCursorPosition.X + 5, buffer_info.dwCursorPosition.Y);
-            cout << "Nᴇᴡ Gᴀᴍᴇ";
+            cout << "Cᴏɴᴛɪɴᴜᴇ";
             GetConsoleScreenBufferInfo(hConsole, &buffer_info);
             gotoxy(buffer_info.dwCursorPosition.X + 5, buffer_info.dwCursorPosition.Y);
             cout << "│";
@@ -129,6 +145,88 @@ int main_menu(int choice)
             cout << "╒══════════════════╕";
             GetConsoleScreenBufferInfo(hConsole, &buffer_info);
             gotoxy(x_buttons - 2, buffer_info.dwCursorPosition.Y + 1);
+            cout << "➤ │";
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(buffer_info.dwCursorPosition.X + 5, buffer_info.dwCursorPosition.Y);
+            cout << "Nᴇᴡ Gᴀᴍᴇ";
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(buffer_info.dwCursorPosition.X + 5, buffer_info.dwCursorPosition.Y);
+            cout << "│";
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(x_buttons, buffer_info.dwCursorPosition.Y + 1);
+            cout << "╘══════════════════╛";
+            cout << reset;
+
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(x_buttons, buffer_info.dwCursorPosition.Y + 2);
+            cout << "╒══════════════════╕";
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(x_buttons, buffer_info.dwCursorPosition.Y + 1);
+            cout << "│";
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(buffer_info.dwCursorPosition.X + 4, buffer_info.dwCursorPosition.Y);
+            cout << "LᴇᴀᴅᴇʀBᴏᴀʀᴅ";
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(buffer_info.dwCursorPosition.X + 3, buffer_info.dwCursorPosition.Y);
+            cout << "│";
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(x_buttons, buffer_info.dwCursorPosition.Y + 1);
+            cout << "╘══════════════════╛";
+
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(x_buttons, buffer_info.dwCursorPosition.Y + 2);
+            cout << "╒══════════════════╕";
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(x_buttons, buffer_info.dwCursorPosition.Y + 1);
+            cout << "│";
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(buffer_info.dwCursorPosition.X + 7, buffer_info.dwCursorPosition.Y);
+            cout << "Exɪᴛ";
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(buffer_info.dwCursorPosition.X + 7, buffer_info.dwCursorPosition.Y);
+            cout << "│";
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(x_buttons, buffer_info.dwCursorPosition.Y + 1);
+            cout << "╘══════════════════╛";
+        }
+        else if (choice == 3)
+        {
+            gotoxy(x_buttons, y_buttons);
+            cout << "╒══════════════════╕";
+            gotoxy(x_buttons, y_buttons + 1);
+            cout << "│";
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(buffer_info.dwCursorPosition.X + 5, buffer_info.dwCursorPosition.Y);
+            cout << "Cᴏɴᴛɪɴᴜᴇ";
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(buffer_info.dwCursorPosition.X + 5, buffer_info.dwCursorPosition.Y);
+            cout << "│";
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(x_buttons, buffer_info.dwCursorPosition.Y + 1);
+            cout << "╘══════════════════╛";
+
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(x_buttons, buffer_info.dwCursorPosition.Y + 2);
+            cout << "╒══════════════════╕";
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(x_buttons, buffer_info.dwCursorPosition.Y + 1);
+            cout << "│";
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(buffer_info.dwCursorPosition.X + 5, buffer_info.dwCursorPosition.Y);
+            cout << "Nᴇᴡ Gᴀᴍᴇ";
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(buffer_info.dwCursorPosition.X + 5, buffer_info.dwCursorPosition.Y);
+            cout << "│";
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(x_buttons, buffer_info.dwCursorPosition.Y + 1);
+            cout << "╘══════════════════╛";
+
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(x_buttons, buffer_info.dwCursorPosition.Y + 2);
+            cout << "\u001b[38;5;196m";
+            cout << "╒══════════════════╕";
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(x_buttons -2 , buffer_info.dwCursorPosition.Y + 1);
             cout << "➤ │";
             GetConsoleScreenBufferInfo(hConsole, &buffer_info);
             gotoxy(buffer_info.dwCursorPosition.X + 4, buffer_info.dwCursorPosition.Y);
@@ -157,11 +255,27 @@ int main_menu(int choice)
             gotoxy(x_buttons, buffer_info.dwCursorPosition.Y + 1);
             cout << "╘══════════════════╛";
         }
-        else if (choice == 3)
+        else if(choice == 4)
         {
-            gotoxy(x_buttons, y_buttons);
+             gotoxy(x_buttons, y_buttons);
             cout << "╒══════════════════╕";
             gotoxy(x_buttons, y_buttons + 1);
+            cout << "│";
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(buffer_info.dwCursorPosition.X + 5, buffer_info.dwCursorPosition.Y);
+            cout << "Cᴏɴᴛɪɴᴜᴇ";
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(buffer_info.dwCursorPosition.X + 5, buffer_info.dwCursorPosition.Y);
+            cout << "│";
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(x_buttons, buffer_info.dwCursorPosition.Y + 1);
+            cout << "╘══════════════════╛";
+
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(x_buttons, buffer_info.dwCursorPosition.Y + 2);
+            cout << "╒══════════════════╕";
+            GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+            gotoxy(x_buttons, buffer_info.dwCursorPosition.Y + 1);
             cout << "│";
             GetConsoleScreenBufferInfo(hConsole, &buffer_info);
             gotoxy(buffer_info.dwCursorPosition.X + 5, buffer_info.dwCursorPosition.Y);
@@ -218,8 +332,8 @@ int main_menu(int choice)
                 --choice;
 
             if (choice == 0)
-                choice = 3;
-            if (choice == 4)
+                choice = 4;
+            if (choice == 5)
                 choice = 1;
         }
     }
@@ -451,7 +565,7 @@ int ingameMenu()
             return 1;
         if (input == 50)
             return 2;
-        if(input == 51)
+        if (input == 51)
             return 3;
     }
 }
