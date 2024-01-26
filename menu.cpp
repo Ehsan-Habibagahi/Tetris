@@ -240,12 +240,12 @@ int level_menu(int choice)
         int tetris_offset = (columns - 23) / 2;
         // Ptrinting this beauty
         gotoxy(tetris_offset, rows / 4);
-            cout << "\u001b[38;5;199m";
+        cout << "\u001b[38;5;199m";
         cout << "▒█░░░ █▀▀ ▀█░█▀ █▀▀ █░░";
         goDownLine(tetris_offset);
         cout << "▒█░░░ █▀▀ ░█▄█░ █▀▀ █░░";
         goDownLine(tetris_offset);
-        cout << "▒█▄▄█ ▀▀▀ ░░▀░░ ▀▀▀ ▀▀▀"<<reset;
+        cout << "▒█▄▄█ ▀▀▀ ░░▀░░ ▀▀▀ ▀▀▀" << reset;
         int x_buttons = (columns - 20) / 2;
         int y_buttons = (rows / 2);
         // Buttons (:
@@ -293,7 +293,7 @@ int level_menu(int choice)
             gotoxy(buffer_info.dwCursorPosition.X + 2, buffer_info.dwCursorPosition.Y);
             cout << "Hᴀʀᴅ(Iʀᴀɴ ᴍᴏᴅᴇ)";
             GetConsoleScreenBufferInfo(hConsole, &buffer_info);
-            gotoxy(buffer_info.dwCursorPosition.X+1, buffer_info.dwCursorPosition.Y);
+            gotoxy(buffer_info.dwCursorPosition.X + 1, buffer_info.dwCursorPosition.Y);
             cout << "│";
             GetConsoleScreenBufferInfo(hConsole, &buffer_info);
             gotoxy(x_buttons, buffer_info.dwCursorPosition.Y + 1);
@@ -303,7 +303,7 @@ int level_menu(int choice)
         {
             gotoxy(x_buttons, y_buttons);
             cout << "╒══════════════════╕";
-            gotoxy(x_buttons , y_buttons + 1);
+            gotoxy(x_buttons, y_buttons + 1);
             cout << "│";
             GetConsoleScreenBufferInfo(hConsole, &buffer_info);
             gotoxy(buffer_info.dwCursorPosition.X + 3, buffer_info.dwCursorPosition.Y);
@@ -343,7 +343,7 @@ int level_menu(int choice)
             gotoxy(buffer_info.dwCursorPosition.X + 2, buffer_info.dwCursorPosition.Y);
             cout << "Hᴀʀᴅ(Iʀᴀɴ ᴍᴏᴅᴇ)";
             GetConsoleScreenBufferInfo(hConsole, &buffer_info);
-            gotoxy(buffer_info.dwCursorPosition.X+1, buffer_info.dwCursorPosition.Y);
+            gotoxy(buffer_info.dwCursorPosition.X + 1, buffer_info.dwCursorPosition.Y);
             cout << "│";
             GetConsoleScreenBufferInfo(hConsole, &buffer_info);
             gotoxy(x_buttons, buffer_info.dwCursorPosition.Y + 1);
@@ -399,8 +399,8 @@ int level_menu(int choice)
             cout << "╘══════════════════╛";
             cout << reset;
         }
-        gotoxy(0,rows-1);
-        cout<<"[B]:Back";
+        gotoxy(0, rows - 1);
+        cout << "[B]:Back";
         input = getch();
         // To handle special keys(arrows)
         if (input == 224 || input == 0)
@@ -416,8 +416,42 @@ int level_menu(int choice)
             if (choice == 4)
                 choice = 1;
         }
-        if(input == 98)
-        return 0;
+        if (input == 98)
+            return 0;
     }
     return choice;
+}
+int ingameMenu()
+{
+    for (int i = 1; i <= 2 * m + 1; i++)
+        for (int j = 1; j <= n; j++)
+        {
+            gotoxy(x_offset + i, y_offset + j);
+            cout << " ";
+        }
+    // C0ntinue
+    gotoxy(x_offset + (2 * m + 1) / 2 - 16, y_offset + n / 3);
+    cout << "▄█ ░ █▀▀ █▀█ █▄░█ ▀█▀ █ █▄░█ █░█ █▀▀";
+    gotoxy(x_offset + (2 * m + 1) / 2 - 16, y_offset + n / 3 + 1);
+    cout << "░█ ▄ █▄▄ █▄█ █░▀█ ░█░ █ █░▀█ █▄█ ██▄";
+    // Restart
+    gotoxy(x_offset + (2 * m + 1) / 2 - 12, y_offset + n / 3 + 4);
+    cout << "▀█ ░ █▀█ █▀▀ █▀ ▀█▀ ▄▀█ █▀█ ▀█▀";
+    gotoxy(x_offset + (2 * m + 1) / 2 - 12, y_offset + n / 3 + 5);
+    cout << "█▄ ▄ █▀▄ ██▄ ▄█ ░█░ █▀█ █▀▄ ░█░";
+    // Save & quit
+    gotoxy(x_offset + (2 * m + 1) / 2 - 12, y_offset + n / 3 + 8);
+    cout << "█▀ ▄▀█ █░█ █▀▀ ▄▄ █▀█ █░█ █ ▀█▀";
+    gotoxy(x_offset + (2 * m + 1) / 2 - 12, y_offset + n / 3 + 9);
+    cout << "▄█ █▀█ ▀▄▀ ██▄ ░░ ▀▀█ █▄█ █ ░█░";
+    while (1)
+    {
+        int input = getch();
+        if (input == 49 || input == 27)
+            return 1;
+        if (input == 50)
+            return 2;
+        if(input == 51)
+            return 3;
+    }
 }

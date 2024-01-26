@@ -3,6 +3,7 @@
 #include <vector>
 #include <random>
 #include <conio.h>
+#include <cmath>
 #include "header.h"
 
 using namespace std;
@@ -13,6 +14,9 @@ int tetNum;
 int sleepTime;
 bool isGuided = true;
 int score = 0;
+int start_time;
+int period2 =0;
+int level;
 int number_of_spoil = 0;
 string name;
 bool inHold = false;
@@ -71,7 +75,8 @@ void initialPrint(string **p)
         {
             GetConsoleScreenBufferInfo(hConsole, &buffer_info);
             if (j != 0)
-                gotoxy(buffer_info.dwCursorPosition.X + 1, buffer_info.dwCursorPosition.Y);
+                cout << " ";
+            // gotoxy(buffer_info.dwCursorPosition.X + 1, buffer_info.dwCursorPosition.Y);
             else
                 gotoxy(buffer_info.dwCursorPosition.X + 2, buffer_info.dwCursorPosition.Y);
             if (p[i][j] == "*")
@@ -535,8 +540,8 @@ void spoilTetro(string **p)
     gotoxy(x_offset + 2 * m - 2 * number_of_spoil + 12, 3);
     cout << "🖕";
     ++number_of_spoil;
-    if(number_of_spoil >= 5)
-    spoilLost();
+    if (number_of_spoil >= 5)
+        spoilLost();
     // Delete tetro
     printTetro("◼", true);
     // Delete guide
@@ -596,11 +601,27 @@ void spoilLost()
     cout << "\u001b[38;5;196m";
     cout << "███╗░░██╗░█████╗░░█████╗░██████╗░  ██████╗░██████╗░░█████╗░  ░░██╗██╗░░██╗\n████╗░██║██╔══██╗██╔══██╗██╔══██╗  ██╔══██╗██╔══██╗██╔══██╗  ░██╔╝╚██╗██╔╝\n██╔██╗██║██║░░██║██║░░██║██████╦╝  ██████╦╝██████╔╝██║░░██║  ██╔╝░░╚███╔╝░\n██║╚████║██║░░██║██║░░██║██╔══██╗  ██╔══██╗██╔══██╗██║░░██║  ╚██╗░░██╔██╗░\n██║░╚███║╚█████╔╝╚█████╔╝██████╦╝  ██████╦╝██║░░██║╚█████╔╝  ░╚██╗██╔╝╚██╗\n╚═╝░░╚══╝░╚════╝░░╚════╝░╚═════╝░  ╚═════╝░╚═╝░░╚═╝░╚════╝░  ░░╚═╝╚═╝░░╚═╝\n";
     cout << reset;
+    update_leaderboard();
     getch();
     exit(0);
 }
+void updateTime()
+{
+    int period = static_cast<unsigned int>(time(nullptr)) - start_time + period2;
+    int min =0;
+    int sec = period;
+    while(period/60 >0)
+    {
+        ++min;
+        period/=60;
+    }
+    sec -= min*60;
+    gotoxy(x_offset + 2 * m + 3, 1);
+    printf("%02d:%02d", min,sec);
+}
 int main()
 {
+    SetConsoleOutputCP(CP_UTF8);
     hideCursor();
 main_menu_disp:
     int result = main_menu(1);
@@ -623,7 +644,12 @@ main_menu_disp:
     }
     else if (result == 2)
     {
-        exit(0);
+        result = level_menu(1);
+        if (result == 0)
+            goto main_menu_disp;
+        else
+            leader_board(result);
+        goto main_menu_disp;
     }
     else if (result == 1)
     {
@@ -786,6 +812,9 @@ main_menu_disp:
         cout << "Nᴀᴍᴇ: " << name;
         gotoxy(x_offset + 1, 3);
         cout << "Sᴄᴏʀᴇ: " << score;
+        gotoxy(x_offset, y_offset + n + 2);
+        cout << "[Esp]:Menu";
+        level = result;
         if (result == 1)
         {
             gotoxy(x_offset + 2 * m + 10, 1);
@@ -804,6 +833,8 @@ main_menu_disp:
             cout << "\u001b[48;5;196m"
                  << "Hard" << reset;
         }
+        gotoxy(x_offset + 2 * m,1);
+        cout<<"⏱";
         bool wentDown = false;
         bool game_continue = true;
         int input;
@@ -817,6 +848,8 @@ main_menu_disp:
         pendingTetro = *tetromino[tetNum];
         pendingTetro.color = color;
         int count_move = 0;
+        start_time = static_cast<unsigned int>(time(nullptr));
+
         while (true)
         {
             if (!wentDown)
@@ -880,11 +913,54 @@ main_menu_disp:
                         hold_tet(p);
                     if (input == 122)
                         rotateLeft(p);
+                    // Ingame menu
+                    if (input == 27)
+                    {
+                        period2 += static_cast<unsigned int>(time(nullptr)) - start_time;
+                        result = ingameMenu();
+                        if (result == 1)
+                        {
+                            initialPrint(p);
+                            printTetro("◼");
+                            printGuide(p);
+                            updateMap(spoiler_x, spoiler_y, "", "🖕");
+                            start_time = static_cast<unsigned int>(time(nullptr));
+                        }
+                        if (result == 2)
+                        {
+                            gotoxy(0, 0);
+                            score = 0;
+                            inHold = false;
+                            number_of_spoil = 0;
+                            period2 = 0;
+                            start_time = static_cast<unsigned int>(time(nullptr));
+                            for (int i = 0; i < n; i++)
+                                for (int j = 0; j < m; j++)
+                                    p[i][j] = "*";
+                            // Delete pending
+                            delete_outside_tetro(2 * m + 4, 8);
+                            // Delete hold
+                            delete_outside_tetro(2 * m + 4, 1);
+                            delete_score();
+                            print_score();
+                            initialPrint(p);
+                            spawn(p);
+                            addSpoiler(p);
+                        }
+                        if (result == 3)
+                        {
+                            update_leaderboard();
+                            goto main_menu_disp;
+                        }
+                    }
                 }
             }
             wentDown = goDown(p);
+            // Time...
+            updateTime();
         }
         // GameOver
+        update_leaderboard();
         cout << "done";
     }
 }
