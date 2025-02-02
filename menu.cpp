@@ -11,6 +11,7 @@ void goDownLine(int tetris_offset)
 }
 int main_menu(int choice)
 {
+    PlaySound(TEXT("data/Gravity.wav"), NULL, SND_FILENAME | SND_ASYNC);
     int input = -1;
     while (input != 13)
     {

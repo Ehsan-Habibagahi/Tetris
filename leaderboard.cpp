@@ -38,7 +38,7 @@ void bubbleSort(int arr[], int n)
 void update_leaderboard()
 {
     fstream fs(address[level - 1], ios::out | ios::app);
-    fs << name << " " << score << " " << number_of_spoil << " " << n << " " << m;
+    fs << name << " " << score << " " << number_of_spoil << " " << n << " " << m<<" "<<period2;
     fs.close();
     ifstream ifs(address[level - 1]);
     string line;
@@ -56,6 +56,7 @@ void update_leaderboard()
 }
 void leader_board(int level)
 {
+    PlaySound(TEXT("data/leaderboard.wav"), NULL, SND_FILENAME | SND_ASYNC);
     ifstream ifs(address[level - 1]);
     string line;
     vector<string> lines;
@@ -171,12 +172,12 @@ void leader_board(int level)
         //Spoiler
         gotoxy(5 * col_offset + 22, 5 + i);
         for (int ii = 1; ii <= player[i-1].spoil; ii++)
-            cout << "🖕";
+            cout << "🦆";
         
         //Status
         gotoxy(6 * col_offset + 27, 5 + i);
         if ((player[i-1].spoil) >= 5)
-            cout << "F-lost";
+            cout << "D-lost";
         else
         {
             gotoxy(6 * col_offset + 24, 5 + i);

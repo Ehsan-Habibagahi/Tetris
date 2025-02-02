@@ -56,7 +56,7 @@ void updateMap(int i, int j, string color, string shape);
 void spoilTetro(string **p);
 bool spawn(string **p);
 void addSpoiler(string **p);
-void spoilLost();
+void lost_game();
 // Functions
 void gotoxy(int x, int y)
 {
@@ -244,7 +244,7 @@ void addSpoiler(string **p)
         spoiler_x = randNum % n;
         spoiler_y = randNum % m;
     } while (p[spoiler_x][spoiler_y] != "*");
-    updateMap(spoiler_x, spoiler_y, "", "🖕");
+    updateMap(spoiler_x, spoiler_y, "", "🦆");
 }
 bool spawn(string **p)
 {
@@ -255,7 +255,8 @@ bool spawn(string **p)
         mt19937 gen(rd());
         uniform_int_distribution<> distrib(0, 100);
         int randNum = distrib(gen);
-        tetNum = randNum % 7;
+        // tetNum = randNum % 7;
+        tetNum = 1;
         string color = "\u001b[38;5;" + to_string((randNum % 16) + 120) + "m";
         pendingTetro = *tetromino[tetNum];
         pendingTetro.color = color;
@@ -326,7 +327,8 @@ void hold_tet(string **p)
         mt19937 gen(rd());
         uniform_int_distribution<> distrib(1, 100);
         int randNum = distrib(gen);
-        tetNum = randNum % 7;
+        // tetNum = randNum % 7;
+        tetNum = 1;
         string color = "\u001b[38;5;" + to_string((randNum % 16) + 120) + "m";
         pendingTetro = *tetromino[tetNum];
         pendingTetro.color = color;
@@ -340,6 +342,7 @@ void goRight(string **p)
 {
     if (canShape(p, currentTetro, coord_x, coord_y + 1))
     {
+        PlaySound(TEXT("data/Tap.wav"), NULL, SND_FILENAME | SND_ASYNC);
         printTetro("◼", true);
         // Remove Guide
 
@@ -353,6 +356,7 @@ void down(string **p)
 {
     if (canShape(p, currentTetro, coord_x + 1, coord_y))
     {
+        PlaySound(TEXT("data/Tap.wav"), NULL, SND_FILENAME | SND_ASYNC);
         printTetro("◼", true);
         // Remove Guide
         printTetro("◼", true, guide_x);
@@ -366,6 +370,7 @@ void down(string **p)
 }
 void fitDown(string **p)
 {
+    PlaySound(TEXT("data/sonic2.wav"), NULL, SND_FILENAME | SND_ASYNC);
     printTetro("◼", true);
     printTetro("◼", false, guide_x);
     score += (guide_x - coord_x);
@@ -377,6 +382,7 @@ void goLeft(string **p)
 {
     if (canShape(p, currentTetro, coord_x, coord_y - 1))
     {
+        PlaySound(TEXT("data/Tap.wav"), NULL, SND_FILENAME | SND_ASYNC);
         printTetro("◼", true);
         // Remove Guide
 
@@ -434,6 +440,7 @@ void rotateRight(string **p)
 
     if (canShape(p, temp, new_x, new_y))
     {
+        PlaySound(TEXT("data/sonic.wav"), NULL, SND_FILENAME | SND_ASYNC);
         printTetro("◼", true);
 
         printTetro("◼", true, guide_x);
@@ -492,6 +499,8 @@ void rotateLeft(string **p)
     }
     if (canShape(p, temp, new_x, new_y))
     {
+        PlaySound(TEXT("data/sonic.wav"), NULL, SND_FILENAME | SND_ASYNC);
+
         printTetro("◼", true);
 
         printTetro("◼", true, guide_x);
@@ -511,6 +520,7 @@ void flashLine(string **p)
     {
         if (k != 1)
         {
+            PlaySound(TEXT("data/Duck.wav"), NULL, SND_FILENAME | SND_ASYNC);
             // Coloring
             for (int i = 0; i < complete_lines.size(); i++)
                 for (int j = 0; j < m; j++)
@@ -549,10 +559,10 @@ void spoilTetro(string **p)
     delete_score();
     print_score();
     gotoxy(x_offset + 2 * m - 2 * number_of_spoil + 12, 3);
-    cout << "🖕";
+    cout << "🦆";
     ++number_of_spoil;
     if (number_of_spoil >= 5)
-        spoilLost();
+        lost_game();
     // Delete tetro
     printTetro("◼", true);
     // Delete guide
@@ -605,12 +615,17 @@ void checkRow(string **p)
             }
         }
 }
-void spoilLost()
+void lost_game()
 {
     PlaySound(TEXT("data/lost.wav"), NULL, SND_FILENAME | SND_ASYNC);
     system("cls");
     cout << "\u001b[38;5;196m";
-    cout << "███╗░░██╗░█████╗░░█████╗░██████╗░  ██████╗░██████╗░░█████╗░  ░░██╗██╗░░██╗\n████╗░██║██╔══██╗██╔══██╗██╔══██╗  ██╔══██╗██╔══██╗██╔══██╗  ░██╔╝╚██╗██╔╝\n██╔██╗██║██║░░██║██║░░██║██████╦╝  ██████╦╝██████╔╝██║░░██║  ██╔╝░░╚███╔╝░\n██║╚████║██║░░██║██║░░██║██╔══██╗  ██╔══██╗██╔══██╗██║░░██║  ╚██╗░░██╔██╗░\n██║░╚███║╚█████╔╝╚█████╔╝██████╦╝  ██████╦╝██║░░██║╚█████╔╝  ░╚██╗██╔╝╚██╗\n╚═╝░░╚══╝░╚════╝░░╚════╝░╚═════╝░  ╚═════╝░╚═╝░░╚═╝░╚════╝░  ░░╚═╝╚═╝░░╚═╝\n";
+    cout << "░██████╗░░█████╗░███╗░░░███╗███████╗  ░█████╗░██╗░░░██╗███████╗██████╗░\n";
+    cout << "██╔════╝░██╔══██╗████╗░████║██╔════╝  ██╔══██╗██║░░░██║██╔════╝██╔══██╗\n";
+    cout << "██║░░██╗░███████║██╔████╔██║█████╗░░  ██║░░██║╚██╗░██╔╝█████╗░░██████╔╝\n";
+    cout << "██║░░╚██╗██╔══██║██║╚██╔╝██║██╔══╝░░  ██║░░██║░╚████╔╝░██╔══╝░░██╔══██╗\n";
+    cout << "╚██████╔╝██║░░██║██║░╚═╝░██║███████╗  ╚█████╔╝░░╚██╔╝░░███████╗██║░░██║\n";
+    cout << "░╚═════╝░╚═╝░░╚═╝╚═╝░░░░░╚═╝╚══════╝  ░╚════╝░░░░╚═╝░░░╚══════╝╚═╝░░╚═╝";
     cout << reset;
     update_leaderboard();
     getch();
@@ -661,12 +676,28 @@ void saveGame()
         fs2 << endl;
     }
     fs2.close();
+    // Pending
+    fstream fs3("data/savepending.txt", ios::out | ios::trunc);
+    fs3 << pendingTetro.height << " " << pendingTetro.width << " " << pendingTetro.color;
+    fs3 << endl;
+    for (int i = 0; i < currentTetro.height; i++)
+    {
+        for (int j = 0; j < currentTetro.width; j++)
+        {
+            fs3 << currentTetro.p[i][j];
+            if (j != currentTetro.width - 1)
+                fs3 << " ";
+        }
+        fs3 << endl;
+    }
+    fs3.close();
 }
 int main()
 {
     SetConsoleOutputCP(CP_UTF8);
     hideCursor();
 main_menu_disp:
+    // Main menu
     int result = main_menu(1);
     // Exit
     if (result == 4)
@@ -685,6 +716,7 @@ main_menu_disp:
         cout << reset;
         exit(0);
     }
+    // Leaderboard
     else if (result == 3)
     {
         result = level_menu(1);
@@ -783,6 +815,11 @@ main_menu_disp:
         tetromino[5] = &tet_skew_2;
         tetromino[6] = &tet_l_2;
         system("cls");
+        GetConsoleScreenBufferInfo(hConsole, &buffer_info);
+        int columns = buffer_info.srWindow.Right - buffer_info.srWindow.Left + 1;
+        int rows = buffer_info.srWindow.Bottom - buffer_info.srWindow.Top + 1;
+        x_offset = (columns - (2 * m + 14)) / 2;
+        y_offset = 5;
         if (result == 1)
         {
             ifstream ifs("data/savegame.txt");
@@ -865,8 +902,6 @@ main_menu_disp:
                         currentTetro.p[i - 1][j] = elements[j];
                 }
             }
-            cout << "dsfa";
-            wentDown = true;
         }
         if (result == 2)
         {
@@ -920,10 +955,20 @@ main_menu_disp:
                     p[i][j] = "*";
             }
             system("cls");
+            // Generating first pending tetro
+            random_device rd;
+            mt19937 gen(rd());
+            uniform_int_distribution<> distrib(1, 100);
+            int randNum = distrib(gen);
+            // tetNum = randNum % 7;
+            tetNum = 1;
+            string color = "\u001b[38;5;" + to_string((randNum % 16) + 120) + "m";
+            pendingTetro = *tetromino[tetNum];
+            pendingTetro.color = color;
         }
         GetConsoleScreenBufferInfo(hConsole, &buffer_info);
-        int columns = buffer_info.srWindow.Right - buffer_info.srWindow.Left + 1;
-        int rows = buffer_info.srWindow.Bottom - buffer_info.srWindow.Top + 1;
+        columns = buffer_info.srWindow.Right - buffer_info.srWindow.Left + 1;
+        rows = buffer_info.srWindow.Bottom - buffer_info.srWindow.Top + 1;
         x_offset = (columns - (2 * m + 14)) / 2;
         y_offset = 5;
         initialPrint(p);
@@ -969,17 +1014,10 @@ main_menu_disp:
         cout << "⏱";
         bool game_continue = true;
         int input;
-        // Generating first pending tetro
-        random_device rd;
-        mt19937 gen(rd());
-        uniform_int_distribution<> distrib(1, 100);
-        int randNum = distrib(gen);
-        tetNum = randNum % 7;
-        string color = "\u001b[38;5;" + to_string((randNum % 16) + 120) + "m";
-        pendingTetro = *tetromino[tetNum];
-        pendingTetro.color = color;
         int count_move = 0;
         start_time = static_cast<unsigned int>(time(nullptr));
+        // Stop sound
+        PlaySound(NULL, NULL, 0);
         while (true)
         {
             if (!wentDown)
@@ -1024,36 +1062,41 @@ main_menu_disp:
                 else
                 {
                     // Hold
-                    if (input == 119 && inHold == false)
+                    if (input == 119 && !inHold)
                         hold_tet(p);
+                    // Left
                     if (input == 97)
                         goLeft(p);
+                    // Down
                     if (input == 115)
                         down(p);
+                    // Right
                     if (input == 100)
                         goRight(p);
-
+                    // Space
                     if (input == 32)
                     {
                         fitDown(p);
                     }
                     // Hold
-                    if (input == 104 && inHold == false)
+                    if (input == 104 && !inHold)
                         hold_tet(p);
                     if (input == 122)
                         rotateLeft(p);
                     // Ingame menu
                     if (input == 27)
                     {
+                        PlaySound(TEXT("data/Gravity2.wav"), NULL, SND_FILENAME | SND_ASYNC);
                         period2 += static_cast<unsigned int>(time(nullptr)) - start_time;
                         result = ingameMenu();
                         // Continue
                         if (result == 1)
                         {
+                            PlaySound(NULL, NULL, 0);
                             initialPrint(p);
                             printTetro("◼");
                             printGuide(p);
-                            updateMap(spoiler_x, spoiler_y, "", "🖕");
+                            updateMap(spoiler_x, spoiler_y, "", "🦆");
                             start_time = static_cast<unsigned int>(time(nullptr));
                         }
                         // Restart
@@ -1092,7 +1135,9 @@ main_menu_disp:
             updateTime();
         }
         // GameOver
+        period2 += (static_cast<unsigned int>(time(nullptr)) - start_time);
         update_leaderboard();
-        cout << "done";
+        lost_game();
+        // cout << "done";
     }
 }
