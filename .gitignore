@@ -1,1 +1,8 @@
+<<<<<<< HEAD
 test.cpp
+=======
+*.pdf
+test*.cpp
+test.cpp
+*.exe
+>>>>>>> Ehsan
