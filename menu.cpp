@@ -536,7 +536,7 @@ int level_menu(int choice)
     }
     return choice;
 }
-int ingameMenu()
+int inGameMenu()
 {
     for (int i = 1; i <= 2 * m + 1; i++)
         for (int j = 1; j <= n; j++)
@@ -550,15 +550,17 @@ int ingameMenu()
     gotoxy(x_offset + (2 * m + 1) / 2 - 16, y_offset + n / 3 + 1);
     cout << "░█ ▄ █▄▄ █▄█ █░▀█ ░█░ █ █░▀█ █▄█ ██▄";
     // Restart
-    gotoxy(x_offset + (2 * m + 1) / 2 - 12, y_offset + n / 3 + 4);
+    gotoxy(x_offset + (2 * m + 1) / 2 - 16, y_offset + n / 3 + 4);
     cout << "▀█ ░ █▀█ █▀▀ █▀ ▀█▀ ▄▀█ █▀█ ▀█▀";
-    gotoxy(x_offset + (2 * m + 1) / 2 - 12, y_offset + n / 3 + 5);
+    gotoxy(x_offset + (2 * m + 1) / 2 - 16, y_offset + n / 3 + 5);
     cout << "█▄ ▄ █▀▄ ██▄ ▄█ ░█░ █▀█ █▀▄ ░█░";
     // Save & quit
-    gotoxy(x_offset + (2 * m + 1) / 2 - 12, y_offset + n / 3 + 8);
-    cout << "█▀ ▄▀█ █░█ █▀▀ ▄▄ █▀█ █░█ █ ▀█▀";
-    gotoxy(x_offset + (2 * m + 1) / 2 - 12, y_offset + n / 3 + 9);
-    cout << "▄█ █▀█ ▀▄▀ ██▄ ░░ ▀▀█ █▄█ █ ░█░";
+    gotoxy(x_offset + (2 * m + 1) / 2 - 16, y_offset + n / 3 + 8);
+    // cout << "█▀ ▄▀█ █░█ █▀▀ ▄▄ █▀█ █░█ █ ▀█▀";
+    cout << "▀▀█ ░ █▀ ▄▀█ █░█ █▀▀  ███▄  █▀█ █░█ █ ▀█▀";
+    gotoxy(x_offset + (2 * m + 1) / 2 - 16, y_offset + n / 3 + 9);
+    // cout << "▄█ █▀█ ▀▄▀ ██▄ ░░ ▀▀█ █▄█ █ ░█░";
+    cout << "▄██ ▄ ▄█ █▀█ ▀▄▀ ██▄  █▄█▄  ▀▀█ █▄█ █ ░█░";
     while (1)
     {
         int input = getch();

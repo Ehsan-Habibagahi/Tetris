@@ -3,7 +3,7 @@
 int main_menu(int choice);
 void gotoxy(int x, int y);
 int level_menu(int choice);
-int ingameMenu();
+int inGameMenu();
 void printBoarder(int x, int y, int w, int h);
 void update_leaderboard();
 void leader_board(int level);

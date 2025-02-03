@@ -1,5 +1,5 @@
 4
 Ehsan 416 3 40 30 30
-Rrrr 457 1 40 40 40
-Mahmoud 270 0 40 40 10
-Gholi 38 1 20 20 8
+Trump 457 1 40 40 40
+Eisenhower 270 0 40 40 10
+Kennedy 38 1 20 20 8

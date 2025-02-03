@@ -2,7 +2,7 @@
  |~-~-~-~-~-~-~-~-~-~-~-بسم الله الرحمن الرحیم-~-~-~-~-~-~-~-~-~-~-~|
  |که پاداش هر زخمه سنگی را دستان کریم تو میوه ای چند شیرین ایثار کند|
  |~-~-~-~-~-~-~-~-~-~-~-~-TETRIS SIMPLE GAME-~-~-~-~-~-~-~-~-~-~-~-~|
- |~-~-~-~-~-~-~-~-~-~-AUTHOR: L4M3R BU7 WR3CK3R~-~-~-~-~-~-~-~-~-~-~|
+ |~-~-~-~-~-~-~-~-~-~-AUTHOR: Ehsan Habibagahi~-~-~-~-~-~-~-~-~-~-~|
  |~-~-~-~-~-~-~-~-~-~-CREATED WITH LOTS OF LOVE!-~-~-~-~-~-~-~-~-~-~|
  +==================================================================*/
 #include <iostream>
@@ -197,6 +197,15 @@ void delete_score()
         cout << ' ';
     }
 }
+void delete_spoiler()
+{
+    while (number_of_spoil)
+    {
+        --number_of_spoil;
+        gotoxy(x_offset + 2 * m - 2 * number_of_spoil + 12, 3);
+        cout << " ";
+    }
+}
 void print_score()
 {
     gotoxy(x_offset + 8, 3);
@@ -255,8 +264,8 @@ bool spawn(string **p)
         mt19937 gen(rd());
         uniform_int_distribution<> distrib(0, 100);
         int randNum = distrib(gen);
-        // tetNum = randNum % 7;
-        tetNum = 1;
+        tetNum = randNum % 7;
+        // tetNum = 1; // for debug - always square
         string color = "\u001b[38;5;" + to_string((randNum % 16) + 120) + "m";
         pendingTetro = *tetromino[tetNum];
         pendingTetro.color = color;
@@ -327,8 +336,8 @@ void hold_tet(string **p)
         mt19937 gen(rd());
         uniform_int_distribution<> distrib(1, 100);
         int randNum = distrib(gen);
-        // tetNum = randNum % 7;
-        tetNum = 1;
+        tetNum = randNum % 7;
+        // tetNum = 1; // for debugging - always square
         string color = "\u001b[38;5;" + to_string((randNum % 16) + 120) + "m";
         pendingTetro = *tetromino[tetNum];
         pendingTetro.color = color;
@@ -649,7 +658,8 @@ void saveGame()
 {
 
     fstream fs("data/savegame.txt", ios::out | ios::trunc);
-    fs << name << " " << n << " " << m << " " << level << " " << period2 << " " << tetNum << " " << sleepTime << " " << score << " " << number_of_spoil << " " << static_cast<int>(inHold) << " " << coord_x << " " << coord_y << " " << static_cast<int>(isGuided) << " " << spoiler_x << " " << spoiler_y;
+    period2 += static_cast<unsigned int>(time(nullptr)) - start_time;
+    fs << name << " " << n << " " << m << " " << level << " " << period2 << " " << tetNum << " " << score << " " << number_of_spoil << " " << static_cast<int>(inHold) << " " << coord_x << " " << coord_y << " " << spoiler_x << " " << spoiler_y << " " << (int)wentDown;
     fs << endl;
     for (int i = 0; i < n; i++)
     {
@@ -680,17 +690,32 @@ void saveGame()
     fstream fs3("data/savepending.txt", ios::out | ios::trunc);
     fs3 << pendingTetro.height << " " << pendingTetro.width << " " << pendingTetro.color;
     fs3 << endl;
-    for (int i = 0; i < currentTetro.height; i++)
+    for (int i = 0; i < pendingTetro.height; i++)
     {
-        for (int j = 0; j < currentTetro.width; j++)
+        for (int j = 0; j < pendingTetro.width; j++)
         {
-            fs3 << currentTetro.p[i][j];
-            if (j != currentTetro.width - 1)
+            fs3 << pendingTetro.p[i][j];
+            if (j != pendingTetro.width - 1)
                 fs3 << " ";
         }
         fs3 << endl;
     }
     fs3.close();
+    // Hold tetro
+    fstream fs4("data/savehold.txt", ios::out | ios::trunc);
+    fs4 << holdTetro.height << " " << holdTetro.width << " " << holdTetro.color;
+    fs4 << endl;
+    for (int i = 0; i < holdTetro.height; i++)
+    {
+        for (int j = 0; j < holdTetro.width; j++)
+        {
+            fs4 << holdTetro.p[i][j];
+            if (j != holdTetro.width - 1)
+                fs4 << " ";
+        }
+        fs4 << endl;
+    }
+    fs4.close();
 }
 int main()
 {
@@ -820,6 +845,7 @@ main_menu_disp:
         int rows = buffer_info.srWindow.Bottom - buffer_info.srWindow.Top + 1;
         x_offset = (columns - (2 * m + 14)) / 2;
         y_offset = 5;
+        // continue
         if (result == 1)
         {
             ifstream ifs("data/savegame.txt");
@@ -847,15 +873,25 @@ main_menu_disp:
                     level = stoi(elements[3]);
                     period2 = stoi(elements[4]);
                     tetNum = stoi(elements[5]);
-                    sleepTime = stoi(elements[6]);
-                    score = stoi(elements[7]);
-                    number_of_spoil = stoi(elements[8]);
-                    inHold = stoi(elements[9]);
-                    coord_x = stoi(elements[10]);
-                    coord_y = stoi(elements[11]);
-                    isGuided = stoi(elements[12]);
-                    spoiler_x = stoi(elements[13]);
-                    spoiler_y = stoi(elements[14]);
+                    // sleepTime = stoi(elements[6]);
+                    score = stoi(elements[6]);
+                    number_of_spoil = stoi(elements[7]);
+                    inHold = stoi(elements[8]);
+                    coord_x = stoi(elements[9]);
+                    coord_y = stoi(elements[10]);
+                    isGuided = true;
+                    spoiler_x = stoi(elements[11]);
+                    spoiler_y = stoi(elements[12]);
+                    wentDown = stoi(elements[13]);
+                    if (level == 1)
+                        sleepTime = 650;
+                    else if (level == 2)
+                        sleepTime = 450;
+                    else // level == 3
+                    {
+                        sleepTime = 100;
+                        isGuided = false;
+                    }
                     p = new string *[n];
                     for (int ii = 0; ii < n; ii++)
                     {
@@ -870,6 +906,8 @@ main_menu_disp:
                         p[i - 1][j] = elements[j];
                 }
             }
+
+            // load current tetro
             lines.clear();
             lines.shrink_to_fit();
             ifstream ifs2("data/savetetro.txt");
@@ -900,6 +938,73 @@ main_menu_disp:
                 {
                     for (int j = 0; j < currentTetro.width; j++)
                         currentTetro.p[i - 1][j] = elements[j];
+                }
+            }
+
+            // load pending tetro
+            lines.clear();
+            lines.shrink_to_fit();
+            ifstream ifs3("data/savepending.txt");
+            while (getline(ifs3, line))
+            {
+                lines.push_back(line);
+            }
+            ifs3.close();
+            for (int i = 0; i < lines.size(); i++)
+            {
+                vector<string> elements;
+                istringstream iss(lines[i]);
+                string elem;
+                while (getline(iss, elem, ' '))
+                {
+                    elements.push_back(elem);
+                }
+                if (i == 0)
+                {
+                    pendingTetro.height = stoi(elements[0]);
+                    pendingTetro.width = stoi(elements[1]);
+                    pendingTetro.color = elements[2];
+                    pendingTetro.p = new string *[pendingTetro.height];
+                    for (int k = 0; k < pendingTetro.height; k++)
+                        pendingTetro.p[k] = new string[pendingTetro.width];
+                }
+                else
+                {
+                    for (int j = 0; j < pendingTetro.width; j++)
+                        pendingTetro.p[i - 1][j] = elements[j];
+                }
+            }
+            // load hold tetro
+            lines.clear();
+            lines.shrink_to_fit();
+            ifstream ifs4("data/savehold.txt");
+            while (getline(ifs4, line))
+            {
+                lines.push_back(line);
+            }
+            ifs4.close();
+            for (int i = 0; i < lines.size(); i++)
+            {
+                vector<string> elements;
+                istringstream iss(lines[i]);
+                string elem;
+                while (getline(iss, elem, ' '))
+                {
+                    elements.push_back(elem);
+                }
+                if (i == 0)
+                {
+                    holdTetro.height = stoi(elements[0]);
+                    holdTetro.width = stoi(elements[1]);
+                    holdTetro.color = elements[2];
+                    holdTetro.p = new string *[holdTetro.height];
+                    for (int k = 0; k < holdTetro.height; k++)
+                        holdTetro.p[k] = new string[holdTetro.width];
+                }
+                else
+                {
+                    for (int j = 0; j < holdTetro.width; j++)
+                        holdTetro.p[i - 1][j] = elements[j];
                 }
             }
         }
@@ -960,8 +1065,8 @@ main_menu_disp:
             mt19937 gen(rd());
             uniform_int_distribution<> distrib(1, 100);
             int randNum = distrib(gen);
-            // tetNum = randNum % 7;
-            tetNum = 1;
+            tetNum = randNum % 7;
+            // tetNum = 1; // for debugging - always square
             string color = "\u001b[38;5;" + to_string((randNum % 16) + 120) + "m";
             pendingTetro = *tetromino[tetNum];
             pendingTetro.color = color;
@@ -1018,6 +1123,12 @@ main_menu_disp:
         start_time = static_cast<unsigned int>(time(nullptr));
         // Stop sound
         PlaySound(NULL, NULL, 0);
+
+        // print pending
+        print_outside_tetro(2 * m + 5 + (10 - pendingTetro.width * 2) / 2 + x_offset, (4 - pendingTetro.height) / 2 + 9 + y_offset, pendingTetro);
+        // Print hold
+        print_outside_tetro(2 * m + 5 + (10 - holdTetro.width * 2) / 2 + x_offset, (4 - holdTetro.height) / 2 + 2 + y_offset, holdTetro);
+
         while (true)
         {
             if (!wentDown)
@@ -1088,8 +1199,8 @@ main_menu_disp:
                     {
                         PlaySound(TEXT("data/Gravity2.wav"), NULL, SND_FILENAME | SND_ASYNC);
                         period2 += static_cast<unsigned int>(time(nullptr)) - start_time;
-                        result = ingameMenu();
-                        // Continue
+                        result = inGameMenu();
+                        // Continue (Resume)
                         if (result == 1)
                         {
                             PlaySound(NULL, NULL, 0);
@@ -1105,7 +1216,6 @@ main_menu_disp:
                             gotoxy(0, 0);
                             score = 0;
                             inHold = false;
-                            number_of_spoil = 0;
                             period2 = 0;
                             start_time = static_cast<unsigned int>(time(nullptr));
                             for (int i = 0; i < n; i++)
@@ -1113,6 +1223,8 @@ main_menu_disp:
                                     p[i][j] = "*";
                             // Delete pending
                             delete_outside_tetro(2 * m + 4, 8);
+                            // Delete spoiler
+                            delete_spoiler();
                             // Delete hold
                             delete_outside_tetro(2 * m + 4, 1);
                             delete_score();
