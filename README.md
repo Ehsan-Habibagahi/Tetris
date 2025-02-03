@@ -12,17 +12,17 @@ A C++ implementation of the classic Tetris game, built from the ground up with e
 ### Compile with:
  `c++ *.cpp -lwinmm`
 ## Features
-- In game sound / sound effect 🔊
-- Responsive UI - press any key to update the view 💅
-- Resumability: Continue from where you saved!
+- In-Game Sound Effects 🔊
+- Responsive UI💅: press any key to update the view
+- Resumability: Save your progress and continue later! The current map, held Tetromino, and pending Tetrominos are all restored.
 All the current map held and pendding tetrominos are retured
-- Hold current Tetromino
+- Hold Feature: Store a Tetromino for later use during gameplay.
 - See incoming Tetromino
-- Easter egg: Spoiler duck spawns on random spot. Each hit will lead to spoil of Tetromino. Hitting 5 ducks leads to loss (D-lost 🦆)
-- 3 levels (Speeds increase by level grows/ Hard mode has no shadow guide)
-- Mid-game pause menu
+- Easter Egg 🦆: A spoiler duck randomly spawns on the map. Each hit spoils the current Tetromino, and hitting 5 ducks results in a loss (D-lost!).
+- 3 levels (Speed scales with the level/ Hard mode disables the shadow guide for added difficulty)
+- Mid-game Pause Menu
 - Timer
-- leaderboard seprate for each level - sorted by (Score/ time)
+- leaderboard: Separate leaderboards for each level, sorted by score and time.
 - Dynamic dimentions
 
 ![Screenshot](./data/Screenshot.png)
