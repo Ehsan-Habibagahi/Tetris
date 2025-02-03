@@ -1,4 +1,4 @@
-# Tetris game (Unicode terminal game)
+# Tetris (Unicode terminal game)
 [![star](https://img.shields.io/static/v1?label=%F0%9F%8C%9F&message=If%20Useful&style=style=flat&color=1e2463)]() [![license](https://img.shields.io/badge/License-MIT-1e2463)]() 
 
 <p align="center">
